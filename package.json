@@ -1,0 +1,10 @@
+{
+  "name": "ks-api",
+  "version": "1.0.0",
+  "main": "index.js",
+  "dependencies": {
+    "express": "^4.16.4",
+    "get-video-duration": "^1.0.3",
+    "youtube-dl": "^1.12.2"
+  }
+}
