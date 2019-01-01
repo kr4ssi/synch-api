@@ -5,7 +5,7 @@ const URL = require('url')
 const PATH = require('path')
 const PORT = process.env.PORT || 5000
 express().get('/add.json', (req, res) => {
-  youtubedl.getInfo(decodeURIComponent(req.query.url), [], function(err, info) {
+  youtubedl.getInfo(decodeURIComponent(req.query.url.replace(/^http:\/\//i, 'https://')), [], function(err, info) {
     if (err) console.error(err)
     else {
       if (!info.title) info = info[0];
@@ -23,7 +23,7 @@ express().get('/add.json', (req, res) => {
         ].find(contentType => contentType.ext.includes(ext))
         if (contentType != undefined) return contentType.type
       }
-      
+
       let url = info.manifest_url ? info.manifest_url.replace(/^http:\/\//i, 'https://') : info.url.replace(/^http:\/\//i, 'https://')
       let jsonObj = {
         title: req.query.title ? decodeURIComponent(req.query.title) : !info.title.toLowerCase().startsWith(info.extractor_key.toLowerCase()) ? info.extractor_key + ' - ' + info.title : info.title,
