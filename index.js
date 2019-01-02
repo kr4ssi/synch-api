@@ -40,7 +40,7 @@ express().get('/add.json', (req, res) => {
       if (info.thumbnail && info.thumbnail.startsWith('http')) jsonObj.sources[0].thumbnail = info.thumbnail.replace(/^http:\/\//i, 'https://')
       if (req.query.duration) jsonObj.duration = Number(req.query.duration)
       else if (info._duration_raw) jsonObj.duration = info._duration_raw
-      if (!jsonObj.duration) getVideoDurationInSeconds(url).then((duration) => {
+      if (!jsonObj.duration && !jsonObj.live) getVideoDurationInSeconds(url).then((duration) => {
         jsonObj.duration = duration
         res.send(jsonObj)
       }).catch(() => {
