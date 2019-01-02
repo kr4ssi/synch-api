@@ -16,7 +16,7 @@ express().get('/add.json', (req, res) => {
           url: url,
           quality: [240, 360, 480, 540, 720, 1080, 1440].includes(Number(req.query.quality)) ? Number(req.query.quality) : 720,
           contentType: req.query.type && decodeURIComponent(req.query.type) || 'application/x-mpegURL',
-          duration: decodeURIComponent(req.query.duration)
+          duration: Number(req.query.duration) || 30
         }
       ]
     }
@@ -54,7 +54,7 @@ express().get('/add.json', (req, res) => {
       }
       if (![240, 360, 480, 540, 720, 1080, 1440].includes(jsonObj.sources[0].quality)) jsonObj.sources[0].quality = 720;
       if (info.thumbnail && info.thumbnail.startsWith('http')) jsonObj.sources[0].thumbnail = info.thumbnail.replace(/^http:\/\//i, 'https://')
-      if (decodeURIComponent(req.query.duration)) jsonObj.duration = Number(req.query.duration)
+      if (Number(req.query.duration)) jsonObj.duration = Number(req.query.duration)
       else if (info._duration_raw) jsonObj.duration = info._duration_raw
       if (!jsonObj.live && !jsonObj.duration) getVideoDurationInSeconds(url).then((duration) => {
         jsonObj.duration = duration
