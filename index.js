@@ -8,7 +8,7 @@ const PORT = process.env.PORT || 5000
 express().get('/add.json', (req, res) => {
   let url = req.query.url
   m3u8 = () => {
-    url = Buffer.from(url, 'base64').toString('utf8')
+    //url = Buffer.from(url, 'base64').toString('utf8')
     let jsonObj = {
       title: decodeURIComponent(req.query.title),
       live: req.query.live == "true",
@@ -21,7 +21,12 @@ express().get('/add.json', (req, res) => {
         }
       ]
     }
-    res.send(jsonObj)
+    getVideoDurationInSeconds(url).then((duration) => {
+      jsonObj.duration = duration
+      res.send(jsonObj)
+    }).catch(() => {
+      res.send(jsonObj)
+    })
   }
   nxload = () => {
     req.query.url.match(/https?:\/\/(www.)?nxload.com\/(embed-)?\w+.html/i) && request(req.query.url.replace(/^http:\/\//i, 'https://').replace(/embed-/i, ''), (err, response, body) => {
