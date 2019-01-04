@@ -61,7 +61,7 @@ express().get('/add.json', (req, res) => {
           jsonObj.sources[0].contentType = contentType(PATH.extname(URL.parse(jsonObj.sources[0].url).pathname)) || 'video/mp4'
         }
         if (allowedQuality.includes(info.height)) jsonObj.sources[0].quality = info.height;
-        if (info.thumbnail && info.thumbnail.match(/^https?:\/\//i) jsonObj.thumbnail = info.thumbnail.replace(/^http:\/\//i, 'https://')
+        if (info.thumbnail && info.thumbnail.match(/^https?:\/\//i)) jsonObj.thumbnail = info.thumbnail.replace(/^http:\/\//i, 'https://')
         if (info._duration_raw) jsonObj.duration = info._duration_raw
         tryToGetDurationAndSend(jsonObj)
       }
