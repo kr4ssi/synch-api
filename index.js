@@ -7,6 +7,7 @@ const PATH = require('path')
 const PORT = process.env.PORT || 5000
 express().get('/add.json', (req, res) => {
   if (req.query.url) {
+    const allowedQuality = [240, 360, 480, 540, 720, 1080, 1440]
     const jsonObj = {
       title: decodeURIComponent(req.query.title),
       live: req.query.live == "true",
@@ -14,23 +15,10 @@ express().get('/add.json', (req, res) => {
       sources: [
         {
           url: decodeURIComponent(req.query.url).replace(/^http:\/\//i, 'https://'),
-          quality: req.query.quality && [240, 360, 480, 540, 720, 1080, 1440].includes(Number(req.query.quality)) ? Number(req.query.quality) : 720,
+          quality: req.query.quality && allowedQuality.includes(Number(req.query.quality)) ? Number(req.query.quality) : 720,
           contentType: req.query.type && decodeURIComponent(req.query.type) || 'application/x-mpegURL'
         }
       ]
-    }
-    function tryToGetDurationAndSend(jsonObj) {
-      if (!jsonObj.live && !jsonObj.duration) {
-        getVideoDurationInSeconds(jsonObj.sources[0].url).then((duration) => {
-          jsonObj.duration = duration
-          res.send(jsonObj)
-        }).catch(() => {
-          res.send(jsonObj)
-        })
-      }
-      else {
-        res.send(jsonObj)
-      }
     }
     if (jsonObj.sources[0].url.match(/.*\.m3u8/)) {
       tryToGetDurationAndSend(jsonObj)
@@ -72,11 +60,24 @@ express().get('/add.json', (req, res) => {
           jsonObj.sources[0].url = info.url.replace(/^http:\/\//i, 'https://')
           jsonObj.sources[0].contentType = contentType(PATH.extname(URL.parse(jsonObj.sources[0].url).pathname)) || 'video/mp4'
         }
-        if ([240, 360, 480, 540, 720, 1080, 1440].includes(info.height)) jsonObj.sources[0].quality = info.height;
+        if (allowedQuality.includes(info.height)) jsonObj.sources[0].quality = info.height;
         if (info.thumbnail && info.thumbnail.startsWith('http')) jsonObj.thumbnail = info.thumbnail.replace(/^http:\/\//i, 'https://')
         if (info._duration_raw) jsonObj.duration = info._duration_raw
         tryToGetDurationAndSend(jsonObj)
       }
     });
+    tryToGetDurationAndSend = jsonObj => {
+      if (!jsonObj.live && !jsonObj.duration) {
+        getVideoDurationInSeconds(jsonObj.sources[0].url).then((duration) => {
+          jsonObj.duration = duration
+          res.send(jsonObj)
+        }).catch(() => {
+          res.send(jsonObj)
+        })
+      }
+      else {
+        res.send(jsonObj)
+      }
+    }
   }
 }).listen(PORT, () => console.log(`Listening on ${ PORT }`))
