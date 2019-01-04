@@ -8,6 +8,7 @@ const ponk = {
       'imgur.com',
       'zdf.de',
       'wdr.de',
+      'bild.de',
       'arte.tv',
       'bandcamp.com',
       'mixcloud.com',

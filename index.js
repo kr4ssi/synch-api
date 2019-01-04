@@ -40,8 +40,8 @@ express().get('/add.json', (req, res) => {
       if (err) console.error(err)
       else {
         if (!info.title) info = info[0];
-        contentType = ext => {
-          let contentType = [
+        const contentType = ext => {
+          const contentType = [
             {type: 'video/mp4', ext: ['.mp4']},
             {type: 'video/webm', ext: ['.webm']},
             {type: 'application/x-mpegURL', ext: ['.m3u8']},
@@ -61,12 +61,12 @@ express().get('/add.json', (req, res) => {
           jsonObj.sources[0].contentType = contentType(PATH.extname(URL.parse(jsonObj.sources[0].url).pathname)) || 'video/mp4'
         }
         if (allowedQuality.includes(info.height)) jsonObj.sources[0].quality = info.height;
-        if (info.thumbnail && info.thumbnail.startsWith('http')) jsonObj.thumbnail = info.thumbnail.replace(/^http:\/\//i, 'https://')
+        if (info.thumbnail && info.thumbnail.match(/^https?:\/\//i) jsonObj.thumbnail = info.thumbnail.replace(/^http:\/\//i, 'https://')
         if (info._duration_raw) jsonObj.duration = info._duration_raw
         tryToGetDurationAndSend(jsonObj)
       }
     });
-    tryToGetDurationAndSend = jsonObj => {
+    const tryToGetDurationAndSend = jsonObj => {
       if (!jsonObj.live && !jsonObj.duration) {
         getVideoDurationInSeconds(jsonObj.sources[0].url).then((duration) => {
           jsonObj.duration = duration
