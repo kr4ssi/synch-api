@@ -7,9 +7,7 @@ const PATH = require('path')
 const PORT = process.env.PORT || 5000
 express().get('/add.json', (req, res) => {
   let url = req.query.url
-  m3u8 = () => {
-    url = req.query.url + '.m3u8'
-    //url = Buffer.from(url, 'base64').toString('utf8')
+  if (req.query.url.match(/.*\.m3u8/)) {
     let jsonObj = {
       title: decodeURIComponent(req.query.title),
       live: req.query.live == "true",
@@ -29,33 +27,31 @@ express().get('/add.json', (req, res) => {
       res.send(jsonObj)
     })
   }
-  nxload = () => {
-    req.query.url.match(/https?:\/\/(www.)?nxload.com\/(embed-)?\w+.html/i) && request(req.query.url.replace(/^http:\/\//i, 'https://').replace(/embed-/i, ''), (err, response, body) => {
-      if (err) return console.log(err)
-      if (response.statusCode == 200) {
-        let url = body.match(/new Clappr\.Player\({\s+sources: \["([^"]+)/i)[1]
-        let jsonObj = {
-          title: body.match(/<title>Watch ([^<]+)/i)[1],
-          live: req.query.live == "true",
-          duration: Number(req.query.duration) || 30,
-          sources: [
-            {
-              url: url,
-              quality: [240, 360, 480, 540, 720, 1080, 1440].includes(Number(req.query.quality)) ? Number(req.query.quality) : 720,
-              contentType: req.query.type && decodeURIComponent(req.query.type) || 'application/x-mpegURL'
-            }
-          ]
-        }
-        getVideoDurationInSeconds(url).then((duration) => {
-          jsonObj.duration = duration
-          res.send(jsonObj)
-        }).catch(() => {
-          res.send(jsonObj)
-        })
+  else if (req.query.url.match(/https?:\/\/(www.)?nxload.com\/(embed-)?\w+.html/i)) request(req.query.url.replace(/^http:\/\//i, 'https://').replace(/embed-/i, ''), (err, response, body) => {
+    if (err) return console.log(err)
+    if (response.statusCode == 200) {
+      let url = body.match(/new Clappr\.Player\({\s+sources: \["([^"]+)/i)[1]
+      let jsonObj = {
+        title: body.match(/<title>Watch ([^<]+)/i)[1],
+        live: req.query.live == "true",
+        duration: Number(req.query.duration) || 30,
+        sources: [
+          {
+            url: url,
+            quality: [240, 360, 480, 540, 720, 1080, 1440].includes(Number(req.query.quality)) ? Number(req.query.quality) : 720,
+            contentType: req.query.type && decodeURIComponent(req.query.type) || 'application/x-mpegURL'
+          }
+        ]
       }
-    })
-  }
-  req.query.url && req.query.m3u8 ? m3u8() : req.query.url && req.query.nxload ? nxload() : req.query.url && youtubedl.getInfo(decodeURIComponent(req.query.url.replace(/^http:\/\//i, 'https://')), [], function(err, info) {
+      getVideoDurationInSeconds(url).then((duration) => {
+        jsonObj.duration = duration
+        res.send(jsonObj)
+      }).catch(() => {
+        res.send(jsonObj)
+      })
+    }
+  })
+  else req.query.url && req.query.nxload ? nxload() : req.query.url && youtubedl.getInfo(decodeURIComponent(req.query.url.replace(/^http:\/\//i, 'https://')), [], function(err, info) {
     if (err) console.error(err)
     else {
       if (!info.title) info = info[0];
