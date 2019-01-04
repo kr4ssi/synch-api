@@ -8,6 +8,7 @@ const PORT = process.env.PORT || 5000
 express().get('/add.json', (req, res) => {
   let url = req.query.url
   m3u8 = () => {
+    url = req.query.url + '.m3u8'
     //url = Buffer.from(url, 'base64').toString('utf8')
     let jsonObj = {
       title: decodeURIComponent(req.query.title),
