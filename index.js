@@ -1,4 +1,5 @@
 const express = require('express')
+const request = require('request');
 const youtubedl = require('youtube-dl')
 const { getVideoDurationInSeconds } = require('get-video-duration')
 const URL = require('url')
@@ -11,18 +12,44 @@ express().get('/add.json', (req, res) => {
     let jsonObj = {
       title: decodeURIComponent(req.query.title),
       live: req.query.live == "true",
+      duration: Number(req.query.duration) || 30,
       sources: [
         {
           url: url,
           quality: [240, 360, 480, 540, 720, 1080, 1440].includes(Number(req.query.quality)) ? Number(req.query.quality) : 720,
-          contentType: req.query.type && decodeURIComponent(req.query.type) || 'application/x-mpegURL',
-          duration: Number(req.query.duration) || 30
+          contentType: req.query.type && decodeURIComponent(req.query.type) || 'application/x-mpegURL'
         }
       ]
     }
     res.send(jsonObj)
   }
-  req.query.url && req.query.m3u8 ? m3u8() : req.query.url && youtubedl.getInfo(decodeURIComponent(req.query.url.replace(/^http:\/\//i, 'https://')), [], function(err, info) {
+  nxload = () => {
+    req.query.url.match(/https?:\/\/(www.)?nxload.com\/(embed-)?\w+.html/i) && request(req.query.url.replace(/^http:\/\//i, 'https://').replace(/embed-/i, ''), (err, response, body) => {
+      if (err) return console.log(err)
+      if (response.statusCode == 200) {
+        let url = body.match(/new Clappr\.Player\({\s+sources: \["([^"]+)/i)[1]
+        let jsonObj = {
+          title: body.match(/<title>Watch ([^<]+)/i)[1],
+          live: req.query.live == "true",
+          duration: Number(req.query.duration) || 30,
+          sources: [
+            {
+              url: url,
+              quality: [240, 360, 480, 540, 720, 1080, 1440].includes(Number(req.query.quality)) ? Number(req.query.quality) : 720,
+              contentType: req.query.type && decodeURIComponent(req.query.type) || 'application/x-mpegURL'
+            }
+          ]
+        }
+        getVideoDurationInSeconds(url).then((duration) => {
+          jsonObj.duration = duration
+          res.send(jsonObj)
+        }).catch(() => {
+          res.send(jsonObj)
+        })
+      }
+    })
+  }
+  req.query.url && req.query.m3u8 ? m3u8() : req.query.url && req.query.nxload ? nxload() : req.query.url && youtubedl.getInfo(decodeURIComponent(req.query.url.replace(/^http:\/\//i, 'https://')), [], function(err, info) {
     if (err) console.error(err)
     else {
       if (!info.title) info = info[0];
