@@ -36,7 +36,7 @@ express().get('/add.json', (req, res) => {
         }
       })
     }
-    else if (jsonObj.sources[0].url.match(/https?:\/\/(www\.)?kinoger\.to\/stream\/[-\w]+\.html/i)) {
+    else if (jsonObj.sources[0].url.match(/https?:\/\/(www\.)?kinoger\.to\/stream\/[\/-\w]+\.html/i)) {
       request(jsonObj.sources[0].url, (err, response, body) => {
         if (err) return console.log(err)
         if (response.statusCode == 200) {
