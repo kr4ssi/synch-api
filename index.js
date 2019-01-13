@@ -1,10 +1,12 @@
 const express = require('express')
-const request = require('request');
+const request = require('request')
 const youtubedl = require('youtube-dl')
 const { getVideoDurationInSeconds } = require('get-video-duration')
 const URL = require('url')
 const PATH = require('path')
 const PORT = process.env.PORT || 5000
+const Instagram = require('instagram-nodejs-without-api')
+const Insta = new Instagram()
 express().get('/add.json', (req, res) => {
   if (req.query.url) {
     const allowedQuality = [240, 360, 480, 540, 720, 1080, 1440]
@@ -87,6 +89,7 @@ express().get('/add.json', (req, res) => {
         tryToGetDurationAndSend(jsonObj)
       }
     });
+    \b(?:http(s)?://)?([^ ]*?\.[^ ]*?)[,.]pic$
     const tryToGetDurationAndSend = jsonObj => {
       if (!jsonObj.live && !jsonObj.duration) {
         getVideoDurationInSeconds(jsonObj.sources[0].url).then((duration) => {
@@ -99,6 +102,12 @@ express().get('/add.json', (req, res) => {
       else {
         res.send(jsonObj)
       }
+    }
+  }
+}).get('/pic.jpg', (req, res) => {
+  if (req.query.url) {
+    if (req.query.url.match(/https?:\/\/(www\.)?instagram\.com\/p\/\w+\/?/i)) {
+      Insta.getMediaInfoByUrl(req.query.url).then(info => res.redirect(info.thumbnail_url.replace(/^http:\/\//i, 'https://')))
     }
   }
 }).listen(PORT, () => console.log(`Listening on ${ PORT }`))
