@@ -5,6 +5,7 @@
   "dependencies": {
     "express": "^4.16.4",
     "get-video-duration": "^1.0.3",
+    "instagram-nodejs-without-api": "^1.2.0",
     "youtube-dl": "^1.12.2"
   }
 }
