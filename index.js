@@ -89,7 +89,6 @@ express().get('/add.json', (req, res) => {
         tryToGetDurationAndSend(jsonObj)
       }
     });
-    \b(?:http(s)?://)?([^ ]*?\.[^ ]*?)[,.]pic$
     const tryToGetDurationAndSend = jsonObj => {
       if (!jsonObj.live && !jsonObj.duration) {
         getVideoDurationInSeconds(jsonObj.sources[0].url).then((duration) => {
