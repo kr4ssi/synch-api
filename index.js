@@ -2,11 +2,13 @@ const express = require('express')
 const request = require('request')
 const youtubedl = require('youtube-dl')
 const { getVideoDurationInSeconds } = require('get-video-duration')
-const URL = require('url')
-const PATH = require('path')
-const PORT = process.env.PORT || 5000
 const Instagram = require('instagram-nodejs-without-api')
 const Insta = new Instagram()
+const URL = require('url')
+const PATH = require('path')
+const writer = require('m3u').writer();
+const PORT = process.env.PORT || 5000
+const STATICS = []
 express().get('/add.json', (req, res) => {
   if (req.query.url) {
     const allowedQuality = [240, 360, 480, 540, 720, 1080, 1440]
@@ -93,20 +95,56 @@ express().get('/add.json', (req, res) => {
       if (!jsonObj.live && !jsonObj.duration) {
         getVideoDurationInSeconds(jsonObj.sources[0].url).then((duration) => {
           jsonObj.duration = duration
-          res.send(jsonObj)
+          sendOrCreate(jsonObj)
         }).catch(() => {
-          res.send(jsonObj)
+          sendOrCreate(jsonObj)
         })
       }
       else {
-        res.send(jsonObj)
+        sendOrCreate(jsonObj)
+      }
+      const sendOrCreate = jsonObj => {
+        if (!req.query.create) {
+          res.send(jsonObj)
+        }
+        else {
+          let index = STATICS.indexOf(jsonObj)
+          if (index < 0) {
+            STATICS.push(jsonObj)
+            index = STATICS.length - 1
+            if (index > 10) {
+              STATICS.shift()
+              index--
+            }
+          }
+          res.send('/static' + index + '.json')
+        }
       }
     }
   }
+}).get('/static:index.json', (req, res) => {
+  res.send(STATICS[req.params.index])
 }).get('/pic.jpg', (req, res) => {
   if (req.query.url) {
     if (req.query.url.match(/https?:\/\/(www\.)?instagram\.com\/p\/\w+\/?/i)) {
       Insta.getMediaInfoByUrl(req.query.url).then(info => res.redirect(info.thumbnail_url.replace(/^http:\/\//i, 'https://')))
+    }
+  }
+}).get('/playlist.m3u8', (req, res) => {
+  if (req.query.url) {
+    if (req.query.url.match(/^https:\/\/(www.)?kohlchan\.net/i)) {
+      request(req.query.url, (err, response, body) => {
+        if (err) return console.log(err)
+        if (response.statusCode == 200) {
+          const regMatch = body.match(/(\/\w\/src\/[0-9-]*\.(webm|mp4)\/[\w-]*\.(webm|mp4))/g)
+          if (regMatch) {
+            regMatch.forEach(webm => {
+              writer.file('https://kohlchan.net' + webm)
+            })
+            res.send(writer.toString())
+          }
+        }
+      })
     }
   }
 }).listen(PORT, () => console.log(`Listening on ${ PORT }`))

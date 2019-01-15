@@ -6,6 +6,7 @@
     "express": "^4.16.4",
     "get-video-duration": "^1.0.3",
     "instagram-nodejs-without-api": "^1.2.0",
+    "m3u": "0.0.2",
     "youtube-dl": "^1.12.2"
   }
 }
