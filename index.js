@@ -32,7 +32,6 @@ express().get('/add.json', (req, res) => {
           jsonObj.duration = duration
         })).then(sendOrCreate).catch(sendOrCreate)
       }
-    }
     const allowedQuality = [240, 360, 480, 540, 720, 1080, 1440]
     const jsonObj = {
       title: decodeURIComponent(req.query.title),
