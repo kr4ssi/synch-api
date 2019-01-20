@@ -9,8 +9,30 @@ const PATH = require('path')
 const writer = require('m3u').extendedWriter();
 const PORT = process.env.PORT || 5000
 const STATICS = []
+let index = 0
 express().get('/add.json', (req, res) => {
   if (req.query.url) {
+    const tryToGetDurationAndSend = jsonObj => {
+      const sendOrCreate = () => {
+        if (req.query.create) {
+          let static = STATICS.find(static => static.json == jsonObj)
+          obj &&
+          if (index < 0) {
+            index = STATICS.push({index: index, json: jsonObj) - 1
+              if (index > 10) {
+                STATICS.shift()
+                index--
+              }
+            }
+            res.send('/static' + index + '.json')
+          }
+          else res.send(jsonObj)
+        }
+        ((jsonObj.live || jsonObj.duration) ? Promise.resolve() : getVideoDurationInSeconds(jsonObj.sources[0].url).then((duration) => {
+          jsonObj.duration = duration
+        })).then(sendOrCreate).catch(sendOrCreate)
+      }
+    }
     const allowedQuality = [240, 360, 480, 540, 720, 1080, 1440]
     const jsonObj = {
       title: decodeURIComponent(req.query.title),
@@ -91,43 +113,12 @@ express().get('/add.json', (req, res) => {
         tryToGetDurationAndSend(jsonObj)
       }
     });
-    const tryToGetDurationAndSend = jsonObj => {
-      if (!jsonObj.live && !jsonObj.duration) {
-        getVideoDurationInSeconds(jsonObj.sources[0].url).then((duration) => {
-          jsonObj.duration = duration
-          sendOrCreate(jsonObj)
-        }).catch(() => {
-          sendOrCreate(jsonObj)
-        })
-      }
-      else {
-        sendOrCreate(jsonObj)
-      }
-      const sendOrCreate = jsonObj => {
-        if (!req.query.create) {
-          res.send(jsonObj)
-        }
-        else {
-          let index = STATICS.indexOf(jsonObj)
-          if (index < 0) {
-            STATICS.push(jsonObj)
-            index = STATICS.length - 1
-            if (index > 10) {
-              STATICS.shift()
-              index--
-            }
-          }
-          res.send('/static' + index + '.json')
-        }
+  }).get('/static:index.json', (req, res) => {
+    res.send(STATICS[req.params.index])
+  }).get('/pic.jpg', (req, res) => {
+    if (req.query.url) {
+      if (req.query.url.match(/https?:\/\/(www\.)?instagram\.com\/p\/\w+\/?/i)) {
+        Insta.getMediaInfoByUrl(req.query.url).then(info => res.redirect(info.thumbnail_url.replace(/^http:\/\//i, 'https://')))
       }
     }
-  }
-}).get('/static:index.json', (req, res) => {
-  res.send(STATICS[req.params.index])
-}).get('/pic.jpg', (req, res) => {
-  if (req.query.url) {
-    if (req.query.url.match(/https?:\/\/(www\.)?instagram\.com\/p\/\w+\/?/i)) {
-      Insta.getMediaInfoByUrl(req.query.url).then(info => res.redirect(info.thumbnail_url.replace(/^http:\/\//i, 'https://')))
-    }
-  }
-}).listen(PORT, () => console.log(`Listening on ${ PORT }`))
+  }).listen(PORT, () => console.log(`Listening on ${ PORT }`))
