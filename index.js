@@ -19,19 +19,19 @@ express().get('/add.json', (req, res) => {
           //obj &&
           if (index < 0) {
             index = STATICS.push({index: index, json: jsonObj}) - 1
-              if (index > 10) {
-                STATICS.shift()
-                index--
-              }
+            if (index > 10) {
+              STATICS.shift()
+              index--
             }
-            res.send('/static' + index + '.json')
           }
-          else res.send(jsonObj)
+          res.send('/static' + index + '.json')
         }
-        ((jsonObj.live || jsonObj.duration) ? Promise.resolve() : getVideoDurationInSeconds(jsonObj.sources[0].url).then((duration) => {
-          jsonObj.duration = duration
-        })).then(sendOrCreate).catch(sendOrCreate)
+        else res.send(jsonObj)
       }
+      ((jsonObj.live || jsonObj.duration) ? Promise.resolve() : getVideoDurationInSeconds(jsonObj.sources[0].url).then((duration) => {
+        jsonObj.duration = duration
+      })).then(sendOrCreate).catch(sendOrCreate)
+    }
     const allowedQuality = [240, 360, 480, 540, 720, 1080, 1440]
     const jsonObj = {
       title: decodeURIComponent(req.query.title),
@@ -112,12 +112,13 @@ express().get('/add.json', (req, res) => {
         tryToGetDurationAndSend(jsonObj)
       }
     });
-  }).get('/static:index.json', (req, res) => {
-    res.send(STATICS[req.params.index])
-  }).get('/pic.jpg', (req, res) => {
-    if (req.query.url) {
-      if (req.query.url.match(/https?:\/\/(www\.)?instagram\.com\/p\/\w+\/?/i)) {
-        Insta.getMediaInfoByUrl(req.query.url).then(info => res.redirect(info.thumbnail_url.replace(/^http:\/\//i, 'https://')))
-      }
+  }
+}).get('/static:index.json', (req, res) => {
+  res.send(STATICS[req.params.index])
+}).get('/pic.jpg', (req, res) => {
+  if (req.query.url) {
+    if (req.query.url.match(/https?:\/\/(www\.)?instagram\.com\/p\/\w+\/?/i)) {
+      Insta.getMediaInfoByUrl(req.query.url).then(info => res.redirect(info.thumbnail_url.replace(/^http:\/\//i, 'https://')))
     }
-  }).listen(PORT, () => console.log(`Listening on ${ PORT }`))
+  }
+}).listen(PORT, () => console.log(`Listening on ${ PORT }`))
