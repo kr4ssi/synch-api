@@ -130,21 +130,4 @@ express().get('/add.json', (req, res) => {
       Insta.getMediaInfoByUrl(req.query.url).then(info => res.redirect(info.thumbnail_url.replace(/^http:\/\//i, 'https://')))
     }
   }
-}).get('/playlist.m3u8', (req, res) => {
-  if (req.query.url) {
-    if (req.query.url.match(/^https:\/\/(www.)?kohlchan\.net/i)) {
-      request(req.query.url, (err, response, body) => {
-        if (err) return console.log(err)
-        if (response.statusCode == 200) {
-          const regMatch = body.match(/(\/\w\/src\/[0-9-]*\.(webm|mp4)\/[\w-]*\.(webm|mp4))/g)
-          if (regMatch) {
-            regMatch.forEach(webm => {
-              writer.file('https://kohlchan.net' + webm)
-            })
-            res.send(writer.toString())
-          }
-        }
-      })
-    }
-  }
 }).listen(PORT, () => console.log(`Listening on ${ PORT }`))
