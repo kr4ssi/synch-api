@@ -16,7 +16,7 @@ express().get('/add.json', (req, res) => {
       const sendOrCreate = () => {
         if (req.query.create) {
           let static = STATICS.find(static => static.json == jsonObj)
-          obj &&
+          //obj &&
           if (index < 0) {
             index = STATICS.push({index: index, json: jsonObj) - 1
               if (index > 10) {
