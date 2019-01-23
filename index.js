@@ -121,4 +121,6 @@ express().get('/add.json', (req, res) => {
       Insta.getMediaInfoByUrl(req.query.url).then(info => res.redirect(info.thumbnail_url.replace(/^http:\/\//i, 'https://')))
     }
   }
+}).get('/', (req, res) => {
+  res.send('')
 }).listen(PORT, () => console.log(`Listening on ${ PORT }`))
