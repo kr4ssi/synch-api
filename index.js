@@ -14,7 +14,7 @@ express().get('/add.json', (req, res) => {
     const tryToGetDurationAndSend = jsonObj => {
       const sendOrCreate = () => {
         if (req.query.ytdl) jsonObj.sources[0].url = 'https://' + req.get('host') + req.originalUrl
-        if (req.query.host) jsonObj.sources[0].url = req.query.host + decodeURIComponent(req.query.url).replace(/^http:\/\//i, 'https://')
+        if (req.query.host) jsonObj.sources[0].url = 'http://' + req.query.host + decodeURIComponent(req.query.url).replace(/^http:\/\//i, 'https://')
         if (req.query.create) {
           let static = STATICS.find(static => static.json == jsonObj)
           //obj &&
