@@ -125,5 +125,5 @@ express().get('/add.json', (req, res) => {
 }).get('/', (req, res) => {
   res.send('')
 }).get('/redir', (req, res) => {
-  res.redirect(req.query.url))
+  res.redirect(req.query.url)
 }).listen(PORT, () => console.log(`Listening on ${ PORT }`))
