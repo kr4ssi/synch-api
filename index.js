@@ -14,7 +14,7 @@ express().get('/add.json', (req, res) => {
   if (req.query.url) {
     const tryToGetDurationAndSend = jsonObj => {
       const sendOrCreate = () => {
-        if (req.query.ytdl) jsonObj.sources[0].url = url.format({
+        if (req.query.ytdl) jsonObj.sources[0].url = URL.format({
           protocol: req.protocol,
           host: req.get('host'),
           pathname: req.originalUrl
