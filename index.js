@@ -16,7 +16,7 @@ express().get('/add.json', (req, res) => {
       const sendOrCreate = () => {
         if (req.query.ytdl) {
           jsonObj.sources[0].url = 'https://' + req.get('host') + req.originalUrl
-          jsonObj.sources[0].contentType = 'video/mp4'
+          //jsonObj.sources[0].contentType = 'video/mp4'
         }
         if (req.query.create) {
           let static = STATICS.find(static => static.json == jsonObj)
