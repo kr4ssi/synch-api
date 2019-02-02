@@ -14,7 +14,11 @@ express().get('/add.json', (req, res) => {
   if (req.query.url) {
     const tryToGetDurationAndSend = jsonObj => {
       const sendOrCreate = () => {
-        if (req.query.ytdl) jsonObj.sources[0].url = decodeURIComponent(req.query.url).replace(/^http:\/\//i, 'https://')
+        if (req.query.ytdl) jsonObj.sources[0].url = url.format({
+          protocol: req.protocol,
+          host: req.get('host'),
+          pathname: req.originalUrl
+        })
         if (req.query.create) {
           let static = STATICS.find(static => static.json == jsonObj)
           //obj &&
