@@ -19,7 +19,7 @@ express().get('/add.json', (req, res) => {
       const ip = forwarded(req).pop()
       const md5ip = crypto.createHash('md5').update(ip).digest('hex')
       const userprovided = precreated.find(obj => obj.ip === md5ip)
-      if (userprovided) res.send(userprovided.jsonObj)
+      if (typeof userprovided != 'undefined') res.send(userprovided.jsonObj)
       else res.send(precreated[0].jsonObj)
     }
     else {
@@ -100,7 +100,7 @@ express().get('/add.json', (req, res) => {
               {type: 'audio/ogg', ext: ['.ogg']},
               {type: 'audio/mpeg', ext: ['.mp3', '.m4a']}
             ].find(contentType => contentType.ext.includes(ext))
-            if (contentType != undefined) return contentType.type
+            if (typeof contentType != 'undefined') return contentType.type
           }
           jsonObj.title = !info.title.toLowerCase().startsWith(info.extractor_key.toLowerCase()) ? info.extractor_key + ' - ' + info.title : info.title
           if (info.manifest_url) jsonObj.sources[0].url = info.manifest_url.replace(/^http:\/\//i, 'https://')
@@ -129,9 +129,9 @@ express().get('/add.json', (req, res) => {
 }).use(express.json()).post("/add.json", (req, res) => {
   const ip = forwarded(req).pop()
   const md5ip = crypto.createHash('md5').update(ip).digest('hex')
-  const jsonObj = STATICS.find(obj => obj.url === req.originalUrl)  
-  STATICS = STATICS.filter(obj => obj.url != req.originalUrl || obj.ip != md5ip)
-  if (jsonObj) {
+  STATICS = STATICS.filter(obj => obj.url != req.originalUrl || !obj.ip || obj.ip != md5ip)
+  const jsonObj = STATICS.find(obj => obj.url === req.originalUrl)
+  if (typeof jsonObj != 'undefined') {
     jsonObj.sources[0].url = req.body.url.replace(/^http:\/\//i, 'https://')
     STATICS.push({url: req.originalUrl, jsonObj, timestamp: Date.now(), ip: md5ip})
   }
