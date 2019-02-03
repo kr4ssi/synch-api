@@ -124,16 +124,13 @@ app.get('/add.json', (req, res) => {
     }
   }
 }).get('/', (req, res) => {
-  res.send('')
+  res.end()
 }).get('/redir', (req, res) => {
   res.redirect(req.query.url)
 }).use(bodyparser.urlencoded({extended : true})).post("/add.json", (req, res) => {
-  STATICS = STATICS.filter(obj => obj.url != req.originalUrl || obj.ip != crypto.createHash('md5').update(req.ip).digest('hex'))
-  if (precreated.length > 0) {
-    const md5ip = crypto.createHash('md5').update(req.ip).digest('hex')
-    const userprovided = precreated.find(obj => obj.ip === md5ip)
-    if (userprovided) res.send(userprovided.jsonObj)
-    else res.send(precreated[0].jsonObj)
-  }
-  console.log(req.body, req.originalUrl, req.ip, req.headers['x-forwarded-for'], req.connection.remoteAddress)
+  const md5ip = crypto.createHash('md5').update(req.ip).digest('hex')
+  STATICS = STATICS.filter(obj => obj.url != req.originalUrl || obj.ip != md5ip)
+  STATICS.push({url: req.originalUrl, req.body, timestamp: Date.now()})
+  console.log(, req.originalUrl, req.ip, req.headers['x-forwarded-for'], req.connection.remoteAddress)
+  res.end()
 }).listen(PORT, () => console.log(`Listening on ${ PORT }`))
