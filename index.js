@@ -10,9 +10,7 @@ const crypto = require('crypto')
 const bodyparser = require("body-parser");
 const PORT = process.env.PORT || 5000
 let STATICS = []
-const app = express()
-app.set('trust proxy', 'loopback')
-app.get('/add.json', (req, res) => {
+express().get('/add.json', (req, res) => {
   if (req.query.url) {
     const hourago = Date.now() - (60 * 60 * 1000)
     STATICS = STATICS.filter(obj => obj.timestamp > hourago)
