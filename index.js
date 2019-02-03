@@ -114,7 +114,6 @@ express().get('/add.json', (req, res) => {
       })
     }
   }
-}
 }).get('/pic.jpg', (req, res) => {
   if (req.query.url) {
     if (req.query.url.match(/https?:\/\/(www\.)?instagram\.com\/p\/\w+\/?/i)) {
