@@ -7,7 +7,6 @@ const Insta = new Instagram()
 const URL = require('url')
 const PATH = require('path')
 const crypto = require('crypto')
-const bodyparser = require("body-parser")
 const forwarded = require('forwarded')
 const PORT = process.env.PORT || 5000
 let STATICS = []
@@ -127,7 +126,7 @@ express().get('/add.json', (req, res) => {
   res.end()
 }).get('/redir', (req, res) => {
   res.redirect(req.query.url)
-}).use(bodyparser()).post("/add.json", (req, res) => {
+}).use(express.json()).post("/add.json", (req, res) => {
   const ip = forwarded(req).pop()
   const md5ip = crypto.createHash('md5').update(ip).digest('hex')
   STATICS = STATICS.filter(obj => obj.url != req.originalUrl || obj.ip != md5ip)
