@@ -4,6 +4,7 @@
   "main": "index.js",
   "dependencies": {
     "express": "^4.16.4",
+    "forwarded": "0.1.2",
     "get-video-duration": "^1.0.3",
     "instagram-nodejs-without-api": "^1.2.0",
     "m3u": "0.0.2",
