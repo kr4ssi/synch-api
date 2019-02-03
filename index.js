@@ -15,7 +15,7 @@ express().get('/add.json', (req, res) => {
     STATICS = STATICS.filter(obj => obj.timestamp > hourago)
     const precreated = STATICS.filter(obj => obj.url === req.originalUrl)
     if (precreated.length > 0) {
-      const md5ip = crypto.createHash('md5').update(data).digest(req.ip)
+      const md5ip = crypto.createHash('md5').update(req.ip).digest('hex')
       const userprovided = precreated.find(obj => obj.ip === md5ip)
       if (userprovided) {
         res.send(userprovided.jsonObj)
