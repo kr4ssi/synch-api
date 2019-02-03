@@ -19,8 +19,8 @@ express().get('/add.json', (req, res) => {
       const ip = forwarded(req).pop()
       const md5ip = crypto.createHash('md5').update(ip).digest('hex')
       const userprovided = STATICS.find(obj => obj.url === originalUrl && obj.ip === md5ip)
-      if (typeof userprovided != 'undefined') console.log(redirto)
-      else console.log(req.query.redirto)
+      if (typeof userprovided != 'undefined') res.redirect(redirto)
+      else res.redirect(req.query.redirto)
     }
     else {
       const hourago = Date.now() - (60 * 60 * 1000)
