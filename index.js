@@ -17,7 +17,7 @@ express().get('/add.json', (req, res) => {
       const ip = forwarded(req).pop()
       const md5ip = crypto.createHash('md5').update(ip).digest('hex')
       const userprovided = STATICS.find(obj => obj.url === originalUrl && obj.ip === md5ip)
-      if (typeof userprovided != 'undefined') res.redirect(userprovided.url)
+      if (typeof userprovided != 'undefined') res.redirect(userprovided.url.match(/^(.*)&redirto=/)[1])
       else res.redirect(req.query.redirto)
     }
     const hourago = Date.now() - (60 * 60 * 1000)
@@ -34,7 +34,7 @@ express().get('/add.json', (req, res) => {
       const tryToGetDurationAndSend = jsonObj => {
         const sendOrCreate = () => {
           if (req.query.ytdl) jsonObj.sources[0].url = 'https://' + req.get('host') + req.originalUrl
-          if (req.query.host) jsonObj.sourfces[0].url = 'https://' + req.get('host') + '/redir?to=' + req.query.host + decodeURIComponent(req.query.url).replace(/^http:\/\//i, 'https://')
+          if (req.query.host) jsonObj.sources[0].url = 'https://' + req.get('host') + '/redir?to=' + req.query.host + decodeURIComponent(req.query.url).replace(/^http:\/\//i, 'https://')
           STATICS.push({url: req.originalUrl, jsonObj, timestamp: Date.now()})
           res.send(jsonObj)
         }
