@@ -13,11 +13,13 @@ let STATICS = []
 express().get('/add.json', (req, res) => {
   if (req.query.url) {
     if (req.query.redirto) {
-      const originalUrl = req.originalUrl.match(/^(.*)&redirto=/)[1]
+      const originalUrl = req.originalUrl.split('&redirto='/)
+      const redirto = originalUrl[1]
+      originalUrl = originalUrl[0]
       const ip = forwarded(req).pop()
       const md5ip = crypto.createHash('md5').update(ip).digest('hex')
       const userprovided = STATICS.find(obj => obj.url === originalUrl && obj.ip === md5ip)
-      if (typeof userprovided != 'undefined') res.redirect(userprovided.url.match(/^(.*)&redirto=/)[1])
+      if (typeof userprovided != 'undefined') res.redirect(redirto)
       else res.redirect(req.query.redirto)
     }
     const hourago = Date.now() - (60 * 60 * 1000)
