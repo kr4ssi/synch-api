@@ -128,7 +128,7 @@ express().get('/add.json', (req, res) => {
 }).use(bodyparser.urlencoded({extended : true})).post("/add.json", (req, res) => {
   const md5ip = crypto.createHash('md5').update(req.headers['x-forwarded-for']).digest('hex')
   STATICS = STATICS.filter(obj => obj.url != req.originalUrl || obj.ip != md5ip)
-  STATICS.push({url: req.originalUrl, jsonObj: req.body, timestamp: Date.now()})
+  STATICS.push({url: req.originalUrl, jsonObj: req.body, timestamp: Date.now(), ip: md5ip})
   console.log(req.body, req.originalUrl, req.ip,req.headers['x-forwarded-for'] , req.ip)
   res.end()
 }).listen(PORT, () => console.log(`Listening on ${ PORT }`))
