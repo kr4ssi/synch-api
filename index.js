@@ -129,8 +129,8 @@ express().get('/add.json', (req, res) => {
 }).use(express.json()).post("/add.json", (req, res) => {
   const ip = forwarded(req).pop()
   const md5ip = crypto.createHash('md5').update(ip).digest('hex')
+  const jsonObj = STATICS.find(obj => obj.url === req.originalUrl)  
   STATICS = STATICS.filter(obj => obj.url != req.originalUrl || obj.ip != md5ip)
-  const jsonObj = STATICS.find(obj => obj.url === req.originalUrl)
   if (jsonObj) {
     jsonObj.sources[0].url = req.body.url.replace(/^http:\/\//i, 'https://')
     STATICS.push({url: req.originalUrl, jsonObj, timestamp: Date.now(), ip: md5ip})
