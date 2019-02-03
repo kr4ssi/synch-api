@@ -133,7 +133,7 @@ express().get('/add.json', (req, res) => {
   const jsonObj = STATICS.find(obj => obj.url === req.originalUrl)
   if (jsonObj) {
     jsonObj.sources[0].url = req.body.url.replace(/^http:\/\//i, 'https://')
-    proto.STATICS.push({url: req.originalUrl, jsonObj: req.body, timestamp: Date.now(), ip: md5ip})
+    STATICS.push({url: req.originalUrl, jsonObj: req.body, timestamp: Date.now(), ip: md5ip})
   }
   res.end()
 }).listen(PORT, () => console.log(`Listening on ${ PORT }`))
