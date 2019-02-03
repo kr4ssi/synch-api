@@ -8,7 +8,7 @@ const URL = require('url')
 const PATH = require('path')
 const crypto = require('crypto')
 const forwarded = require('forwarded')
-const PORT = process.env.PORT || 5000
+const PORT = process.env.PORT || 5001
 let STATICS = []
 express().get('/add.json', (req, res) => {
   if (req.query.url) {
@@ -130,10 +130,13 @@ express().get('/add.json', (req, res) => {
   const ip = forwarded(req).pop()
   const md5ip = crypto.createHash('md5').update(ip).digest('hex')
   STATICS = STATICS.filter(obj => obj.url != req.originalUrl || !obj.ip || obj.ip != md5ip)
-  const jsonObj = STATICS.find(obj => obj.url === req.originalUrl)
-  if (typeof jsonObj != 'undefined') {
+  const autocreated = STATICS.find(obj => obj.url === req.originalUrl)
+  if (typeof autocreated != 'undefined') {
+    const jsonObj = autocreated.jsonObj
+    console.log(jsonObj)
     jsonObj.sources[0].url = req.body.url.replace(/^http:\/\//i, 'https://')
     STATICS.push({url: req.originalUrl, jsonObj, timestamp: Date.now(), ip: md5ip})
+    res.send(jsonObj)
   }
-  res.end(jsonObj)
+  res.end()
 }).listen(PORT, () => console.log(`Listening on ${ PORT }`))
