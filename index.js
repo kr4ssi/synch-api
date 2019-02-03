@@ -11,7 +11,7 @@ const bodyparser = require("body-parser");
 const PORT = process.env.PORT || 5000
 let STATICS = []
 app = express()
-app.set('trust proxy')
+app.set('trust proxy', 'loopback')
 app.get('/add.json', (req, res) => {
   if (req.query.url) {
     const hourago = Date.now() - (60 * 60 * 1000)
@@ -128,5 +128,12 @@ app.get('/add.json', (req, res) => {
 }).get('/redir', (req, res) => {
   res.redirect(req.query.url)
 }).use(bodyparser.urlencoded({extended : true})).post("/add.json", (req, res) => {
+  STATICS = STATICS.filter(obj => obj.url != req.originalUrl || obj.ip != crypto.createHash('md5').update(req.ip).digest('hex'))
+  if (precreated.length > 0) {
+    const md5ip = crypto.createHash('md5').update(req.ip).digest('hex')
+    const userprovided = precreated.find(obj => obj.ip === md5ip)
+    if (userprovided) res.send(userprovided.jsonObj)
+    else res.send(precreated[0].jsonObj)
+  }
   console.log(req.body, req.originalUrl, req.ip, req.headers['x-forwarded-for'], req.connection.remoteAddress)
 }).listen(PORT, () => console.log(`Listening on ${ PORT }`))
