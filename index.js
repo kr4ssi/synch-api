@@ -10,7 +10,7 @@ const crypto = require('crypto')
 const bodyparser = require("body-parser");
 const PORT = process.env.PORT || 5000
 let STATICS = []
-app = express()
+const app = express()
 app.set('trust proxy', 'loopback')
 app.get('/add.json', (req, res) => {
   if (req.query.url) {
@@ -130,7 +130,7 @@ app.get('/add.json', (req, res) => {
 }).use(bodyparser.urlencoded({extended : true})).post("/add.json", (req, res) => {
   const md5ip = crypto.createHash('md5').update(req.ip).digest('hex')
   STATICS = STATICS.filter(obj => obj.url != req.originalUrl || obj.ip != md5ip)
-  STATICS.push({url: req.originalUrl, req.body, timestamp: Date.now()})
+  STATICS.push({url: req.originalUrl, jsonObj: req.body, timestamp: Date.now()})
   console.log(, req.originalUrl, req.ip, req.headers['x-forwarded-for'], req.connection.remoteAddress)
   res.end()
 }).listen(PORT, () => console.log(`Listening on ${ PORT }`))
