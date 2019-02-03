@@ -19,7 +19,7 @@ express().get('/add.json', (req, res) => {
       const ip = forwarded(req).pop()
       const md5ip = crypto.createHash('md5').update(ip).digest('hex')
       const userprovided = STATICS.find(obj => obj.url === originalUrl && obj.ip === md5ip)
-      if (typeof userprovided != 'undefined') res.redirect(redirto)
+      if (typeof userprovided != 'undefined') res.redirect(userprovided.url)
       else res.redirect(redirto)
     }
     else {
@@ -147,7 +147,7 @@ express().get('/add.json', (req, res) => {
   if (typeof autocreated != 'undefined') {
     const jsonObj = autocreated.jsonObj
     console.log(jsonObj)
-    jsonObj.sources[0].url = 'https://' + req.get('host') + req.originalUrl + '&redirto=' + req.body.url.replace(/^http:\/\//i, 'https://')
+    jsonObj.sources[0].url = req.body.url.replace(/^http:\/\//i, 'https://')
     STATICS.push({url: req.originalUrl, jsonObj, timestamp: Date.now(), ip: md5ip})
     res.send(jsonObj)
   }
