@@ -34,7 +34,7 @@ express().get('/add.json', (req, res) => {
       const tryToGetDurationAndSend = jsonObj => {
         const sendOrCreate = () => {
           if (req.query.ytdl) jsonObj.sources[0].url = 'https://' + req.get('host') + req.originalUrl
-          if (req.query.host) jsonObj.sources[0].url = 'https://' + req.get('host') + '/redir?to=' + req.query.host + decodeURIComponent(req.query.url).replace(/^http:\/\//i, 'https://')
+          if (req.query.host) jsonObj.sourfces[0].url = 'https://' + req.get('host') + '/redir?to=' + req.query.host + decodeURIComponent(req.query.url).replace(/^http:\/\//i, 'https://')
           STATICS.push({url: req.originalUrl, jsonObj, timestamp: Date.now()})
           res.send(jsonObj)
         }
