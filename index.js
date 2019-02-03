@@ -16,7 +16,7 @@ express().get('/add.json', (req, res) => {
       let originalUrl = req.originalUrl.split('&redirto=')
       const redirto = originalUrl[1]
       originalUrl = originalUrl[0]
-      const ip = forwarded(req).pop()
+      const ip = forwardsed(req).pop()
       const md5ip = crypto.createHash('md5').update(ip).digest('hex')
       const userprovided = STATICS.find(obj => obj.url === originalUrl && obj.ip === md5ip)
       if (typeof userprovided != 'undefined') res.redirect(redirto)
