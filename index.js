@@ -18,7 +18,7 @@ express().get('/add.json', (req, res) => {
       const md5ip = crypto.createHash('md5').update(req.ip).digest('hex')
       const userprovided = precreated.find(obj => obj.ip === md5ip)
       if (userprovided) res.send(userprovided.jsonObj)
-      else res.send(precreated.jsonObj)
+      else res.send(precreated[0].jsonObj)
     }
     else {
       const tryToGetDurationAndSend = jsonObj => {
