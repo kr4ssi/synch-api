@@ -7,9 +7,12 @@ const Insta = new Instagram()
 const URL = require('url')
 const PATH = require('path')
 const crypto = require('crypto')
+const bodyparser = require("body-parser");
 const PORT = process.env.PORT || 5000
 let STATICS = []
-express().set('trust proxy').get('/add.json', (req, res) => {
+app = express()
+app.set('trust proxy')
+app.get('/add.json', (req, res) => {
   if (req.query.url) {
     const hourago = Date.now() - (60 * 60 * 1000)
     STATICS = STATICS.filter(obj => obj.timestamp > hourago)
@@ -124,6 +127,6 @@ express().set('trust proxy').get('/add.json', (req, res) => {
   res.send('')
 }).get('/redir', (req, res) => {
   res.redirect(req.query.url)
-}).post("/add.json", (req, res) => {
+}).use(bodyparser.urlencoded({extended : true})).post("/add.json", (req, res) => {
   console.log(req.body, req.originalUrl, req.ip, req.headers['x-forwarded-for'], req.connection.remoteAddress)
 }).listen(PORT, () => console.log(`Listening on ${ PORT }`))
