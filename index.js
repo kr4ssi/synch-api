@@ -135,6 +135,6 @@ express().get('/add.json', (req, res) => {
   STATICS = STATICS.filter(obj => obj.url != req.originalUrl || obj.ip != md5ip)
   if (STATICS.find(obj => obj.url === req.originalUrl)) STATICS.push({url: req.originalUrl, jsonObj: req.body, timestamp: Date.now(), ip: md5ip})
   x = ' - '
-  console.log(req.body, req.originalUrl, req.headers['x-forwarded-for'], ,x, req.ip, x, req.connection.remoteAddress, x, forwarded(req))
+  console.log(req.body, req.originalUrl, req.headers['x-forwarded-for'],x , req.ip, x, req.connection.remoteAddress, x, forwarded(req))
   res.end()
 }).listen(PORT, () => console.log(`Listening on ${ PORT }`))
