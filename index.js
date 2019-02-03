@@ -12,6 +12,14 @@ const PORT = process.env.PORT || 5001
 let STATICS = []
 express().get('/add.json', (req, res) => {
   if (req.query.url) {
+    if (req.query.redirto) {
+      const originalUrl = req.originalUrl.match(/^(.*)&redirto=/)[1]
+      const ip = forwarded(req).pop()
+      const md5ip = crypto.createHash('md5').update(ip).digest('hex')
+      const userprovided = STATICS.find(obj => obj.url === originalUrl && obj.ip === md5ip)
+      if (typeof userprovided != 'undefined') res.redirect(userprovided.url)
+      else res.redirect(req.query.redirto)
+    }
     const hourago = Date.now() - (60 * 60 * 1000)
     STATICS = STATICS.filter(obj => obj.timestamp > hourago)
     const precreated = STATICS.filter(obj => obj.url === req.originalUrl)
@@ -26,7 +34,7 @@ express().get('/add.json', (req, res) => {
       const tryToGetDurationAndSend = jsonObj => {
         const sendOrCreate = () => {
           if (req.query.ytdl) jsonObj.sources[0].url = 'https://' + req.get('host') + req.originalUrl
-          if (req.query.host) jsonObj.sources[0].url = 'https://' + req.get('host') + '/redir?url=' + req.query.host + decodeURIComponent(req.query.url).replace(/^http:\/\//i, 'https://')
+          if (req.query.host) jsonObj.sources[0].url = 'https://' + req.get('host') + '/redir?to=' + req.query.host + decodeURIComponent(req.query.url).replace(/^http:\/\//i, 'https://')
           STATICS.push({url: req.originalUrl, jsonObj, timestamp: Date.now()})
           res.send(jsonObj)
         }
@@ -103,9 +111,9 @@ express().get('/add.json', (req, res) => {
             if (typeof contentType != 'undefined') return contentType.type
           }
           jsonObj.title = !info.title.toLowerCase().startsWith(info.extractor_key.toLowerCase()) ? info.extractor_key + ' - ' + info.title : info.title
-          if (info.manifest_url) jsonObj.sources[0].url = info.manifest_url.replace(/^http:\/\//i, 'https://')
+          if (info.manifest_url) jsonObj.sources[0].url = 'https://' + req.get('host') + req.originalUrl + '&redirto=' + info.manifest_url.replace(/^http:\/\//i, 'https://')
           else {
-            jsonObj.sources[0].url = info.url.replace(/^http:\/\//i, 'https://')
+            jsonObj.sources[0].url = 'https://' + req.get('host') + req.originalUrl + '&redirto=' + info.url.replace(/^http:\/\//i, 'https://')
             jsonObj.sources[0].contentType = contentType(PATH.extname(URL.parse(jsonObj.sources[0].url).pathname)) || 'video/mp4'
           }
           if (allowedQuality.includes(info.height)) jsonObj.sources[0].quality = info.height;
@@ -134,7 +142,7 @@ express().get('/add.json', (req, res) => {
   if (typeof autocreated != 'undefined') {
     const jsonObj = autocreated.jsonObj
     console.log(jsonObj)
-    jsonObj.sources[0].url = req.body.url.replace(/^http:\/\//i, 'https://')
+    jsonObj.sources[0].url = 'https://' + req.get('host') + req.originalUrl + '&redirto=' + req.body.url.replace(/^http:\/\//i, 'https://')
     STATICS.push({url: req.originalUrl, jsonObj, timestamp: Date.now(), ip: md5ip})
     res.send(jsonObj)
   }
