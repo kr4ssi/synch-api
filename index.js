@@ -127,7 +127,7 @@ express().get('/add.json', (req, res) => {
   res.end()
 }).get('/redir', (req, res) => {
   res.redirect(req.query.url)
-}).use(bodyparser.urlencoded({extended : true})).post("/add.json", (req, res) => {
+}).post("/add.json", (req, res) => {
   const ip = forwarded(req).pop()
   const md5ip = crypto.createHash('md5').update(ip).digest('hex')
   STATICS = STATICS.filter(obj => obj.url != req.originalUrl || obj.ip != md5ip)
