@@ -13,7 +13,7 @@ let STATICS = []
 express().get('/add.json', (req, res) => {
   if (req.query.url) {
     if (req.query.redirto) {
-      const originalUrl = req.originalUrl.split('&redirto='/)
+      const originalUrl = req.originalUrl.split('&redirto=')
       const redirto = originalUrl[1]
       originalUrl = originalUrl[0]
       const ip = forwarded(req).pop()
