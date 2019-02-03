@@ -9,7 +9,7 @@ const PATH = require('path')
 const crypto = require('crypto')
 const PORT = process.env.PORT || 5000
 let STATICS = []
-express().get('/add.json', (req, res) => {
+express().set('trust proxy').get('/add.json', (req, res) => {
   if (req.query.url) {
     const hourago = Date.now() - (60 * 60 * 1000)
     STATICS = STATICS.filter(obj => obj.timestamp > hourago)
