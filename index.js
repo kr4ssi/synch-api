@@ -38,6 +38,7 @@ express().get('/add.json', (req, res) => {
           const sendOrCreate = () => {
             if (req.query.ytdl) jsonObj.sources[0].url = 'https://' + req.get('host') + req.originalUrl
             if (req.query.host) jsonObj.sources[0].url = 'https://' + req.get('host') + '/redir?to=' + req.query.host + decodeURIComponent(req.query.url).replace(/^http:\/\//i, 'https://')
+            else jsonObj.sources[0].url = 'https://' + req.get('host') + req.originalUrl + '&redirto=' + jsonObj.sources[0].url
             STATICS.push({url: req.originalUrl, jsonObj, timestamp: Date.now()})
             res.send(jsonObj)
           }
@@ -114,9 +115,9 @@ express().get('/add.json', (req, res) => {
               if (typeof contentType != 'undefined') return contentType.type
             }
             jsonObj.title = !info.title.toLowerCase().startsWith(info.extractor_key.toLowerCase()) ? info.extractor_key + ' - ' + info.title : info.title
-            if (info.manifest_url) jsonObj.sources[0].url = 'https://' + req.get('host') + req.originalUrl + '&redirto=' + info.manifest_url.replace(/^http:\/\//i, 'https://')
+            if (info.manifest_url) jsonObj.sources[0].url = info.manifest_url.replace(/^http:\/\//i, 'https://')
             else {
-              jsonObj.sources[0].url = 'https://' + req.get('host') + req.originalUrl + '&redirto=' + info.url.replace(/^http:\/\//i, 'https://')
+              jsonObj.sources[0].url = info.url.replace(/^http:\/\//i, 'https://')
               jsonObj.sources[0].contentType = contentType(PATH.extname(URL.parse(jsonObj.sources[0].url).pathname)) || 'video/mp4'
             }
             if (allowedQuality.includes(info.height)) jsonObj.sources[0].quality = info.height;
