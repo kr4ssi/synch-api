@@ -19,7 +19,6 @@ express().get('/add.json', (req, res) => {
       const userprovided = STATICS.find(obj => obj.url === originalUrl && obj.ip === md5ip)
       if (typeof userprovided != 'undefined') res.redirect(userprovided.url)
       else res.redirect(req.query.redirto)
-      res.end()
     }
     const hourago = Date.now() - (60 * 60 * 1000)
     STATICS = STATICS.filter(obj => obj.timestamp > hourago)
