@@ -9,7 +9,7 @@ const PATH = require('path')
 const crypto = require('crypto')
 //crypto.createHash('md5').update(data).digest("hex");
 const PORT = process.env.PORT || 5000
-const STATICS = []
+let STATICS = []
 let index = 0
 express().get('/add.json', (req, res) => {
   if (req.query.url) {
