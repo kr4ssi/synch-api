@@ -131,6 +131,6 @@ app.get('/add.json', (req, res) => {
   const md5ip = crypto.createHash('md5').update(req.ip).digest('hex')
   STATICS = STATICS.filter(obj => obj.url != req.originalUrl || obj.ip != md5ip)
   STATICS.push({url: req.originalUrl, jsonObj: req.body, timestamp: Date.now()})
-  console.log(, req.originalUrl, req.ip, req.headers['x-forwarded-for'], req.connection.remoteAddress)
+  console.log(req.body, req.originalUrl, req.ip, req.headers['x-forwarded-for'], req.connection.remoteAddress)
   res.end()
 }).listen(PORT, () => console.log(`Listening on ${ PORT }`))
