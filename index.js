@@ -16,7 +16,7 @@ express().get('/add.json', (req, res) => {
     STATICS = STATICS.filter(obj => obj.timestamp > hourago)
     const precreated = STATICS.filter(obj => obj.url === req.originalUrl)
     if (precreated.length > 0) {
-      const xforwarded = req.ip,req.headers['x-forwarded-for']
+      const xforwarded = req.headers['x-forwarded-for']
       const ip = xforwarded[xforwarded.length - 1]
       const md5ip = crypto.createHash('md5').update(ip).digest('hex')
       const userprovided = precreated.find(obj => ip === md5ip)
@@ -128,7 +128,7 @@ express().get('/add.json', (req, res) => {
 }).get('/redir', (req, res) => {
   res.redirect(req.query.url)
 }).use(bodyparser.urlencoded({extended : true})).post("/add.json", (req, res) => {
-  const xforwarded = req.ip,req.headers['x-forwarded-for']
+  const xforwarded = req.headers['x-forwarded-for']
   const ip = xforwarded[xforwarded.length - 1]
   const md5ip = crypto.createHash('md5').update(ip).digest('hex')
   STATICS = STATICS.filter(obj => obj.url != req.originalUrl || obj.ip != md5ip)
