@@ -10,7 +10,6 @@ const crypto = require('crypto')
 //crypto.createHash('md5').update(data).digest("hex");
 const PORT = process.env.PORT || 5000
 let STATICS = []
-let index = 0
 express().get('/add.json', (req, res) => {
   if (req.query.url) {
     const hourago = Date.now() - (60 * 60 * 1000)
@@ -22,7 +21,7 @@ express().get('/add.json', (req, res) => {
         const sendOrCreate = () => {
           if (req.query.ytdl) jsonObj.sources[0].url = 'https://' + req.get('host') + req.originalUrl
           if (req.query.host) jsonObj.sources[0].url = 'https://' + req.get('host') + '/redir?url=' + req.query.host + decodeURIComponent(req.query.url).replace(/^http:\/\//i, 'https://')
-          STATICS.push({url: req.originalUrl, json: jsonObj, timestamp: Date.now()})
+          STATICS.push({url: req.originalUrl, jsonObj, timestamp: Date.now()})
           res.send(jsonObj)
         }
         ((jsonObj.live || jsonObj.duration) ? Promise.resolve() : getVideoDurationInSeconds(jsonObj.sources[0].url).then((duration) => {
