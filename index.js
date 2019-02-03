@@ -17,10 +17,9 @@ express().get('/add.json', (req, res) => {
     STATICS = STATICS.filter(obj => obj.timestamp > hourago)
     const precreated = STATICS.filter(obj => obj.url === req.originalUrl)
     if (precreated.length > 0) {
-      const xforwarded = req.headers['x-forwarded-for']
-      const ip = xforwarded[xforwarded.length - 1]
+      const ip = forwarded(req).pop()
       const md5ip = crypto.createHash('md5').update(ip).digest('hex')
-      const userprovided = precreated.find(obj => ip === md5ip)
+      const userprovided = precreated.find(obj => obj.ip === md5ip)
       if (userprovided) res.send(userprovided.jsonObj)
       else res.send(precreated[0].jsonObj)
     }
@@ -129,12 +128,10 @@ express().get('/add.json', (req, res) => {
 }).get('/redir', (req, res) => {
   res.redirect(req.query.url)
 }).use(bodyparser.urlencoded({extended : true})).post("/add.json", (req, res) => {
-  const xforwarded = req.headers['x-forwarded-for']
-  const ip = xforwarded[xforwarded.length - 1]
+  const ip = forwarded(req).pop()
   const md5ip = crypto.createHash('md5').update(ip).digest('hex')
   STATICS = STATICS.filter(obj => obj.url != req.originalUrl || obj.ip != md5ip)
   if (STATICS.find(obj => obj.url === req.originalUrl)) STATICS.push({url: req.originalUrl, jsonObj: req.body, timestamp: Date.now(), ip: md5ip})
-  x = ' - '
-  console.log(req.body, req.originalUrl, req.headers['x-forwarded-for'],x , req.ip, x, req.connection.remoteAddress, x, forwarded(req))
+  console.log(req.body, req.originalUrl, ip)
   res.end()
 }).listen(PORT, () => console.log(`Listening on ${ PORT }`))
