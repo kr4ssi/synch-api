@@ -38,7 +38,7 @@ express().get('/add.json', (req, res) => {
           const sendOrCreate = () => {
             if (req.query.ytdl) jsonObj.sources[0].url = 'https://' + req.get('host') + req.originalUrl
             if (req.query.host) jsonObj.sources[0].url = 'https://' + req.get('host') + '/redir?to=' + req.query.host + decodeURIComponent(req.query.url).replace(/^http:\/\//i, 'https://')
-            else jsonObj.sources[0].url = 'https://' + req.get('host') + req.originalUrl + '&redirto=' + jsonObj.sources[0].url
+            if (req.query.create) jsonObj.sources[0].url = 'https://' + req.get('host') + req.originalUrl.replace('&create=true', '') + '&redirto=' + jsonObj.sources[0].url
             STATICS.push({url: req.originalUrl, jsonObj, timestamp: Date.now()})
             res.send(jsonObj)
           }
@@ -64,7 +64,7 @@ express().get('/add.json', (req, res) => {
         }
         else if (jsonObj.sources[0].url.match(/https?:\/\/(www\.)?nxload\.com\/(embed-)?\w+\.html/i)) {
           request(jsonObj.sources[0].url.replace(/embed-/i, ''), (err, response, body) => {
-            if (err) return console.log(err)
+            if (err) return console.error(err)
             if (response.statusCode == 200) {
               const regMatch = body.match(/new Clappr\.Player\({\s+sources: \["([^"]+)/i)
               if (regMatch) {
@@ -77,13 +77,13 @@ express().get('/add.json', (req, res) => {
         }
         else if (jsonObj.sources[0].url.match(/https?:\/\/(www\.)?kinoger\.to\/stream\/[\/-\w]+\.html/i)) {
           request(jsonObj.sources[0].url, (err, response, body) => {
-            if (err) return console.log(err)
+            if (err) return console.error(err)
             if (response.statusCode == 200) {
               let regMatch = body.match(/<div id="kinog-player"><iframe src="https?:\/\/([^"]+)/i)
               if (regMatch) {
                 jsonObj.title = body.match(/<meta property="og:title" content="([^""]+)/i)[1],
                 request('https://s1.' + regMatch[1], (err, response, body) => {
-                  if (err) return console.log(err)
+                  if (err) return console.error(err)
                   if (response.statusCode == 200) {
                     regMatch = body.match(/', type: 'video\/mp4'},{url: \'\/\/([^\']+)/i)
                     if (regMatch) {
