@@ -25,7 +25,7 @@ const provideUserLink = (res, url, link, ip) => {
   else return 'no data'
 }
 express().get('/add.json', (req, res) => {
-  if (!req.query.url || (!validUrl.isHttpsUri(req.query.url) && !validUrl.isHttpUri(req.query.url)) return res.send('must provide an url')
+  if (!req.query.url || (!validUrl.isHttpsUri(req.query.url) && !validUrl.isHttpUri(req.query.url))) return res.send('must provide an url')
   if (req.query.userlink) return res.send(provideUserLink (req.query.url, req.query.userlink, md5ip(req)))
   const hourago = Date.now() - (60 * 60 * 1000)
   STATICS = STATICS.filter(obj => obj.timestamp > hourago || obj.ip)
