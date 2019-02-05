@@ -12,7 +12,7 @@ const validUrl = require('valid-url')
 const PORT = process.env.PORT || 5001
 const md5ip = req => crypto.createHash('md5').update(forwarded(req).pop()).digest('hex')
 let STATICS = []
-const provideUserLink = (res, url, link, ip) => {
+const provideUserLink = (url, link, ip) => {
   STATICS = STATICS.filter(obj => obj.url != url || !obj.ip || obj.ip != md5ip)
   const autocreated = STATICS.find(obj => obj.url === url)
   if (typeof autocreated != 'undefined') {
@@ -26,7 +26,7 @@ const provideUserLink = (res, url, link, ip) => {
 }
 express().get('/add.json', (req, res) => {
   if (!req.query.url || (!validUrl.isHttpsUri(req.query.url) && !validUrl.isHttpUri(req.query.url))) return res.send('must provide an url')
-  if (req.query.userlink) return res.send(provideUserLink (req.query.url, req.query.userlink, md5ip(req)))
+  if (req.query.userlink) return res.send(provideUserLink(req.query.url, req.query.userlink, md5ip(req)))
   const hourago = Date.now() - (60 * 60 * 1000)
   STATICS = STATICS.filter(obj => obj.timestamp > hourago || obj.ip)
   const cache = STATICS.filter(obj => obj.url === req.query.url)
