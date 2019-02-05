@@ -144,4 +144,6 @@ express().get('/add.json', (req, res) => {
   }
 }).get('/', (req, res) => {
   res.end()
+}).get('/ks.user.js', (req, res) => {
+    res.end(require('fs').readFileSync('ks.user.js', {encoding: "utf-8"}))
 }).listen(PORT, () => console.log(`Listening on ${ PORT }`))
