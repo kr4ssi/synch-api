@@ -13,7 +13,7 @@ const PORT = process.env.PORT || 5001
 const md5ip = req => crypto.createHash('md5').update(forwarded(req).pop()).digest('hex')
 let STATICS = []
 const provideUserLink = (res, url, link, ip) => {
-  STATICS = STATICS.filter(obj => obj.url != req.query.url || !obj.ip || obj.ip != md5ip)
+  STATICS = STATICS.filter(obj => obj.url != url || !obj.ip || obj.ip != md5ip)
   const autocreated = STATICS.find(obj => obj.url === req.query.url)
   if (typeof autocreated != 'undefined') {
     const jsonObj = autocreated.jsonObj
