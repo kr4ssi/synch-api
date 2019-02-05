@@ -14,7 +14,7 @@ const md5ip = req => crypto.createHash('md5').update(forwarded(req).pop()).diges
 let STATICS = []
 const provideUserLink = (url, link, ip) => {
   STATICS = STATICS.filter(obj => obj.url != url || !obj.ip || obj.ip != md5ip)
-  const autocreated = STATICS.find(obj => obj.url === url)
+  const autocreated = STATICS.find(obj => obj.jsonObj.sources[0].url === url)
   if (typeof autocreated != 'undefined') {
     const jsonObj = autocreated.jsonObj
     console.log(jsonObj)
