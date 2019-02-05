@@ -13,29 +13,34 @@ const PORT = process.env.PORT || 5001
 const md5ip = req => crypto.createHash('md5').update(forwarded(req).pop()).digest('hex')
 let STATICS = []
 const provideUserLink = (url, link, ip) => {
-  STATICS = STATICS.filter(obj => obj.url != url || !obj.ip || obj.ip != md5ip)
+  console.log(STATICS)
+  STATICS = STATICS.filter(obj => obj.url != url || !obj.ip || obj.ip != ip)
   const autocreated = STATICS.find(obj => obj.url === url)
   if (typeof autocreated != 'undefined') {
     const jsonObj = autocreated.jsonObj
-    console.log(jsonObj)
     jsonObj.sources[0].url = link.replace(/^http:\/\//i, 'https://')
-    STATICS.push({url: url, jsonObj, timestamp: Date.now(), ip: md5ip})
+    STATICS.push({url, jsonObj, timestamp: Date.now(), ip})
     return jsonObj
   }
   else return 'no data'
 }
 express().get('/add.json', (req, res) => {
   if (!req.query.url || (!validUrl.isHttpsUri(req.query.url) && !validUrl.isHttpUri(req.query.url))) return res.send('must provide an url')
-  if (req.query.userlink) return res.send(provideUserLink (req.query.url, req.query.userlink, md5ip(req)))
+  if (req.query.userlink) return res.send(provideUserLink(req.query.url, req.query.userlink, md5ip(req)))
   const hourago = Date.now() - (60 * 60 * 1000)
   STATICS = STATICS.filter(obj => obj.timestamp > hourago || obj.ip)
-  const cache = STATICS.filter(obj => obj.url === req.query.url)
-  if (cache.length > 0) return res.send(cache[0].jsonObj)
+  const cache = STATICS.find(obj => obj.url === req.query.url && !obj.ip)
+  if (typeof cache != 'undefined') {
+    const newjsonObj = JSON.parse(JSON.stringify(cache.jsonObj))
+    if (req.query.redir) newjsonObj.sources[0].url = 'https://' + req.get('host') + '/redir?url=' + req.query.url
+    return res.send(newjsonObj)
+  }
   const tryToGetDurationAndSend = jsonObj => {
     const sendOrCreate = () => {
       STATICS.push({url: req.query.url, jsonObj, timestamp: Date.now()})
-      if (req.query.redir) jsonObj.sources[0].url = 'https://' + req.get('host') + '/redir?url=' + jsonObj.sources[0].url
-      res.send(jsonObj)
+      const newjsonObj = JSON.parse(JSON.stringify(jsonObj))
+      if (req.query.redir) newjsonObj.sources[0].url = 'https://' + req.get('host') + '/redir?url=' + req.query.url
+      res.send(newjsonObj)
     }
     ((jsonObj.live || jsonObj.duration) ? Promise.resolve() : getVideoDurationInSeconds(jsonObj.sources[0].url).then((duration) => {
       jsonObj.duration = duration
@@ -125,8 +130,10 @@ express().get('/add.json', (req, res) => {
   const cache = STATICS.filter(obj => obj.url === req.query.url)
   if (cache.length > 0){
     const user = cache.find(obj => obj.ip === md5ip(req))
+    console.log(user)
+    console.log(cache[0].jsonObj)
     if (typeof user != 'undefined') res.redirect(user.jsonObj.sources[0].url)
-    else res.redirect(cache.jsonObj.sources[0].url)
+    else res.redirect(cache[0].jsonObj.sources[0].url)
   }
   else res.send('not found')
 }).use(express.json()).post("/add.json", (req, res) => {
