@@ -9,6 +9,7 @@
     "instagram-nodejs-without-api": "^1.2.0",
     "m3u": "0.0.2",
     "phantomjs": "2.1.7",
+    "valid-url": "1.0.9",
     "youtube-dl": "^1.12.2"
   }
 }
