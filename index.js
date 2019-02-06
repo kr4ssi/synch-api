@@ -112,7 +112,7 @@ express().get('/redir', (req, res) => {
               }
             }
           })
-        })
+        }
       }
     })
   }
@@ -151,4 +151,5 @@ express().get('/redir', (req, res) => {
 }).get('/pic.jpg', (req, res) => {
   if (req.query.url && req.query.url.match(/https?:\/\/(www\.)?instagram\.com\/p\/\w+\/?/i)) {
     Insta.getMediaInfoByUrl(req.query.url).then(info => res.redirect(info.thumbnail_url.replace(/^http:\/\//i, 'https://'))).catch(err => console.log(err))
+  }
 }).listen(PORT, () => console.log(`Listening on ${ PORT }`))
