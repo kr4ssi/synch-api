@@ -112,7 +112,7 @@ express().get('/redir', (req, res) => {
               }
             }
           })
-        }
+        })
       }
     })
   }
@@ -152,10 +152,4 @@ express().get('/redir', (req, res) => {
   if (req.query.url && req.query.url.match(/https?:\/\/(www\.)?instagram\.com\/p\/\w+\/?/i)) {
     Insta.getMediaInfoByUrl(req.query.url).then(info => res.redirect(info.thumbnail_url.replace(/^http:\/\//i, 'https://'))).catch(err => console.log(err))
   }
-}).get('/page', (req, res) => {
-  const Pageres = require('pageres')
-  const pageres = new Pageres({delay: 2})
-  	.src('https://s1.hdgo.cc/video/t/82fXtwek4LSLmmeOIzzHHhmOa5a2JEc2/762821/', ['1024x768'], {crop: true})
-  	.run()
-  	.then((data) => data[0].pipe(res));
 }).listen(PORT, () => console.log(`Listening on ${ PORT }`))
