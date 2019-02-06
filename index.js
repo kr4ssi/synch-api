@@ -12,7 +12,7 @@ const validUrl = require('valid-url')
 const PORT = process.env.PORT || 5001
 let STATICS = []
 const md5ip = req => crypto.createHash('md5').update(forwarded(req).pop()).digest('hex')
-const oloadReplace = url => url.replace(/https?:\/\/(openload.co|oload\.[a-z0-9-]{2,})\/(f|embed)\//, 'https://openload.co/f/')
+const oloadReplace = url => url.replace(/https?:\/\/(openload.co|oload\.[a-z0-9-]{2,})\/(f|embed)\//, 'https://openload.co/f/').replace(/https?:\/\/(streamango\.com|fruithosts\.net)\/(f|embed)\//, 'https://streamango.com/f/')
 const provideUserLink = (url, link, ip) => {
   if (!url || (!validUrl.isHttpsUri(url) && !validUrl.isHttpUri(url))) return 'must provide an url'
   url = oloadReplace(url)
