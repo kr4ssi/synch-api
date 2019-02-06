@@ -10,11 +10,12 @@ const crypto = require('crypto')
 const forwarded = require('forwarded')
 const validUrl = require('valid-url')
 const PORT = process.env.PORT || 5001
-const md5ip = req => crypto.createHash('md5').update(forwarded(req).pop()).digest('hex')
 let STATICS = []
+const md5ip = req => crypto.createHash('md5').update(forwarded(req).pop()).digest('hex')
+const oloadReplace = url => url.replace(/https?:\/\/(openload.co|oload\.[a-z0-9-]{2,})\/(f|embed)\//, 'https://openload.co/f/')
 const provideUserLink = (url, link, ip) => {
   if (!url || (!validUrl.isHttpsUri(url) && !validUrl.isHttpUri(url))) return 'must provide an url'
-  url = url.replace(/https?:\/\/o(pen)?load\..*\/(f|embed)\//, 'https://openload.co/f/')
+  url = oloadReplace(url)
   console.log(STATICS)
   STATICS = STATICS.filter(obj => obj.url != url || !obj.ip || obj.ip != ip)
   const autocreated = STATICS.find(obj => obj.url === url)
@@ -41,17 +42,17 @@ express().get('/redir', (req, res) => {
   if (!req.query.url || (!validUrl.isHttpsUri(req.query.url) && !validUrl.isHttpUri(req.query.url))) return res.send('must provide an url')
   const hourago = Date.now() - (60 * 60 * 1000)
   STATICS = STATICS.filter(obj => obj.timestamp > hourago || obj.ip)
-  const cache = STATICS.find(obj => obj.url === req.query.url.replace(/https?:\/\/o(pen)?load\..*\/(f|embed)\//, 'https://openload.co/f/') && !obj.ip)
+  const cache = STATICS.find(obj => obj.url === oloadReplace(req.query.url) && !obj.ip)
   if (typeof cache != 'undefined') {
     const newjsonObj = JSON.parse(JSON.stringify(cache.jsonObj))
-    if (req.query.redir) newjsonObj.sources[0].url = 'https://' + req.get('host') + '/redir?url=' + req.query.url.replace(/https?:\/\/o(pen)?load\..*\/(f|embed)\//, 'https://openload.co/f/')
+    if (req.query.redir) newjsonObj.sources[0].url = 'https://' + req.get('host') + '/redir?url=' + oloadReplace(req.query.url)
     return res.send(newjsonObj)
   }
   const tryToGetDurationAndSend = jsonObj => {
     const sendOrCreate = () => {
-      STATICS.push({url: req.query.url.replace(/https?:\/\/o(pen)?load\..*\/(f|embed)\//, 'https://openload.co/f/'), jsonObj, timestamp: Date.now()})
+      STATICS.push({url: oloadReplace(req.query.url), jsonObj, timestamp: Date.now()})
       const newjsonObj = JSON.parse(JSON.stringify(jsonObj))
-      if (req.query.redir) newjsonObj.sources[0].url = 'https://' + req.get('host') + '/redir?url=' + req.query.url.replace(/https?:\/\/o(pen)?load\..*\/(f|embed)\//, 'https://openload.co/f/')
+      if (req.query.redir) newjsonObj.sources[0].url = 'https://' + req.get('host') + '/redir?url=' + oloadReplace(req.query.url)
       res.send(newjsonObj)
     }
     ((jsonObj.live || jsonObj.duration) ? Promise.resolve() : getVideoDurationInSeconds(jsonObj.sources[0].url).then((duration) => {
