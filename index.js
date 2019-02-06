@@ -112,7 +112,7 @@ express().get('/redir', (req, res) => {
               }
             }
           })
-        })
+        }
       }
     })
   }
