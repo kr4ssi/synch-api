@@ -98,7 +98,7 @@ express().get('/redir', (req, res) => {
         let regMatch = body.match(/<div id="kinog-player"><iframe src="https?:\/\/([^"]+)/i)
         if (regMatch) {
           jsonObj.title = body.match(/<meta property="og:title" content="([^""]+)/i)[1]
-          request('https://s1.' + regMatch[1], (err, res, body) => {
+          request('https://s2.' + regMatch[1], (err, res, body) => {
             console.log('https://s2.' + regMatch[1], res.statusCode, res.rawHeaders, body)
             if (err) return console.error(err)
             if (res.statusCode == 200) {
