@@ -25,7 +25,17 @@ const provideUserLink = (url, link, ip) => {
   }
   else return 'no data'
 }
-express().get('/add.json', (req, res) => {
+express().get('/redir', (req, res) => {
+  const cache = STATICS.filter(obj => obj.url === req.query.url)
+  if (cache.length > 0){
+    const user = cache.find(obj => obj.ip === md5ip(req))
+    if (typeof user != 'undefined') res.redirect(user.jsonObj.sources[0].url)
+    else res.redirect(cache[0].jsonObj.sources[0].url)
+  }
+  else res.send('not found')
+}).use(express.json()).post("/add.json", (req, res) => {
+  res.send(provideUserLink(req.query.url, req.body.url, md5ip(req)))
+}).get('/add.json', (req, res) => {
   if (!req.query.url || (!validUrl.isHttpsUri(req.query.url) && !validUrl.isHttpUri(req.query.url))) return res.send('must provide an url')
   if (req.query.userlink) return res.send(provideUserLink(req.query.url, req.query.userlink, md5ip(req)))
   const hourago = Date.now() - (60 * 60 * 1000)
@@ -127,22 +137,12 @@ express().get('/add.json', (req, res) => {
       tryToGetDurationAndSend(jsonObj)
     }
   })
-}).get('/redir', (req, res) => {
-  const cache = STATICS.filter(obj => obj.url === req.query.url)
-  if (cache.length > 0){
-    const user = cache.find(obj => obj.ip === md5ip(req))
-    if (typeof user != 'undefined') res.redirect(user.jsonObj.sources[0].url)
-    else res.redirect(cache[0].jsonObj.sources[0].url)
-  }
-  else res.send('not found')
-}).use(express.json()).post("/add.json", (req, res) => {
-  res.send(provideUserLink(req.query.url, req.body.url, md5ip(req)))
-}).get('/pic.jpg', (req, res) => {
-  if (req.query.url && req.query.url.match(/https?:\/\/(www\.)?instagram\.com\/p\/\w+\/?/i)) {
-    Insta.getMediaInfoByUrl(req.query.url).then(info => res.redirect(info.thumbnail_url.replace(/^http:\/\//i, 'https://')))
-  }
 }).get('/', (req, res) => {
   res.end()
 }).get('/ks.user.js', (req, res) => {
     res.end(require('fs').readFileSync('ks.user.js', {encoding: "utf-8"}))
+}).get('/pic.jpg', (req, res) => {
+  if (req.query.url && req.query.url.match(/https?:\/\/(www\.)?instagram\.com\/p\/\w+\/?/i)) {
+    Insta.getMediaInfoByUrl(req.query.url).then(info => res.redirect(info.thumbnail_url.replace(/^http:\/\//i, 'https://')))
+  }
 }).listen(PORT, () => console.log(`Listening on ${ PORT }`))
