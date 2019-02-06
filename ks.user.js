@@ -19,7 +19,6 @@ const timer = setInterval(() => {
   }
   else if (window.location.href.match(/https?:\/\/(streamango\.com|fruithosts\.net)\/(f|embed)\/[^/?#&]+/)) {
     let e = document.querySelector("[id^=mgvideo_html5_api]")
-    console.log(e)
     if (!e) return
     link = e.src
   }
