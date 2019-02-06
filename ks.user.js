@@ -1,6 +1,7 @@
 // ==UserScript==
 // @name        openload fürn KS
 // @namespace   https://github.com/kr4ssi/synch-api/
+// @version     1.0
 // @author      kr4ssi
 // @include     /https?:\/\/(openload.co|oload\.[a-z0-9-]{2,})\/(f|embed)\/.*/
 // ==/UserScript==
