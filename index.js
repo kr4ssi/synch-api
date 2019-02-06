@@ -155,7 +155,7 @@ express().get('/redir', (req, res) => {
 }).get('/page', (req, res) => {
   const Pageres = require('pageres')
   const pageres = new Pageres({delay: 2})
-  	.src('yeoman.io', ['1024x768'], {crop: true})
+  	.src('https://s1.hdgo.cc/video/t/82fXtwek4LSLmmeOIzzHHhmOa5a2JEc2/762821/', ['1024x768'], {crop: true})
   	.run()
   	.then((data) => data[0].pipe(res));
 }).listen(PORT, () => console.log(`Listening on ${ PORT }`))
