@@ -79,9 +79,9 @@ express().get('/redir', (req, res) => {
     tryToGetDurationAndSend()
   }
   else if (jsonObj.sources[0].url.match(/https?:\/\/(www\.)?nxload\.com\/(embed-)?\w+\.html/i)) {
-    request(jsonObj.sources[0].url.replace(/embed-/i, ''), (err, response, body) => {
+    request(jsonObj.sources[0].url.replace(/embed-/i, ''), (err, res, body) => {
       if (err) return console.error(err)
-      if (response.statusCode == 200) {
+      if (res.statusCode == 200) {
         const regMatch = body.match(/new Clappr\.Player\({\s+sources: \["([^"]+)/i)
         if (regMatch) {
           jsonObj.sources[0].url = regMatch[1].replace(/^http:\/\//i, 'https://')
@@ -92,16 +92,16 @@ express().get('/redir', (req, res) => {
     })
   }
   else if (jsonObj.sources[0].url.match(/https?:\/\/(www\.)?kinoger\.to\/stream\/[\/-\w]+\.html/i)) {
-    request(jsonObj.sources[0].url, (err, response, body) => {
+    request(jsonObj.sources[0].url, (err, res, body) => {
       if (err) return console.error(err)
-      console.log(response.header)
-      if (response.statusCode == 200) {
+      console.log(res.rawHeaders)
+      if (res.statusCode == 200) {
         let regMatch = body.match(/<div id="kinog-player"><iframe src="https?:\/\/([^"]+)/i)
         if (regMatch) {
           jsonObj.title = body.match(/<meta property="og:title" content="([^""]+)/i)[1],
-          request('https://s1.' + regMatch[1], (err, response, body) => {
+          request('https://s1.' + regMatch[1], (err, res, body) => {
             if (err) return console.error(err)
-            if (response.statusCode == 200) {
+            if (res.statusCode == 200) {
               regMatch = body.match(/', type: 'video\/mp4'},{url: \'\/\/([^\']+)/i)
               if (regMatch) {
                 jsonObj.sources[0].url = 'https://' + regMatch[1]
