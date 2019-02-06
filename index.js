@@ -48,16 +48,19 @@ express().get('/redir', (req, res) => {
     if (req.query.redir) newjsonObj.sources[0].url = 'https://' + req.get('host') + '/redir?url=' + oloadReplace(req.query.url)
     return res.send(newjsonObj)
   }
-  const tryToGetDurationAndSend = jsonObj => {
+  let tries = 0
+  const tryToGetDurationAndSend = err => {
     const sendOrCreate = () => {
-      STATICS.push({url: oloadReplace(req.query.url), jsonObj, timestamp: Date.now()})
+      if (jsonObj.duration > 0) STATICS.push({url: oloadReplace(req.query.url), jsonObj, timestamp: Date.now()})
       const newjsonObj = JSON.parse(JSON.stringify(jsonObj))
       if (req.query.redir) newjsonObj.sources[0].url = 'https://' + req.get('host') + '/redir?url=' + oloadReplace(req.query.url)
       res.send(newjsonObj)
     }
-    ((jsonObj.live || jsonObj.duration) ? Promise.resolve() : getVideoDurationInSeconds(jsonObj.sources[0].url).then((duration) => {
+    tries++
+    if (err) console.error(err)
+    ;((jsonObj.live || jsonObj.duration || tries > 5) ? Promise.resolve() : getVideoDurationInSeconds(jsonObj.sources[0].url).then((duration) => {
       jsonObj.duration = duration
-    })).then(sendOrCreate).catch(sendOrCreate)
+    })).then(sendOrCreate).catch(tryToGetDurationAndSend)
   }
   const allowedQuality = [240, 360, 480, 540, 720, 1080, 1440]
   const jsonObj = {
@@ -73,7 +76,7 @@ express().get('/redir', (req, res) => {
     ]
   }
   if (jsonObj.sources[0].url.match(/.*\.m3u8/)) {
-    tryToGetDurationAndSend(jsonObj)
+    tryToGetDurationAndSend()
   }
   else if (jsonObj.sources[0].url.match(/https?:\/\/(www\.)?nxload\.com\/(embed-)?\w+\.html/i)) {
     request(jsonObj.sources[0].url.replace(/embed-/i, ''), (err, response, body) => {
@@ -83,7 +86,7 @@ express().get('/redir', (req, res) => {
         if (regMatch) {
           jsonObj.sources[0].url = regMatch[1].replace(/^http:\/\//i, 'https://')
           jsonObj.title = body.match(/<title>Watch ([^<]+)/i)[1],
-          tryToGetDurationAndSend(jsonObj)
+          tryToGetDurationAndSend()
         }
       }
     })
@@ -101,7 +104,7 @@ express().get('/redir', (req, res) => {
               regMatch = body.match(/', type: 'video\/mp4'},{url: \'\/\/([^\']+)/i)
               if (regMatch) {
                 jsonObj.sources[0].url = 'https://' + regMatch[1]
-                tryToGetDurationAndSend(jsonObj)
+                tryToGetDurationAndSend()
               }
             }
           })
@@ -110,8 +113,7 @@ express().get('/redir', (req, res) => {
     })
   }
   else youtubedl.getInfo(jsonObj.sources[0].url, [], function(err, info) {
-    if (err) console.error(err)
-    else {
+    if (err) return console.error(err)
       if (!info.title) info = info[0];
       const contentType = ext => {
         const contentType = [
@@ -136,8 +138,7 @@ express().get('/redir', (req, res) => {
       if (allowedQuality.includes(info.height)) jsonObj.sources[0].quality = info.height;
       if (info.thumbnail && info.thumbnail.match(/^https?:\/\//i)) jsonObj.thumbnail = info.thumbnail.replace(/^http:\/\//i, 'https://')
       if (info._duration_raw) jsonObj.duration = info._duration_raw
-      tryToGetDurationAndSend(jsonObj)
-    }
+      tryToGetDurationAndSend()
   })
 }).get('/', (req, res) => {
   res.end()
@@ -145,6 +146,6 @@ express().get('/redir', (req, res) => {
     res.end(require('fs').readFileSync('ks.user.js', {encoding: "utf-8"}))
 }).get('/pic.jpg', (req, res) => {
   if (req.query.url && req.query.url.match(/https?:\/\/(www\.)?instagram\.com\/p\/\w+\/?/i)) {
-    Insta.getMediaInfoByUrl(req.query.url).then(info => res.redirect(info.thumbnail_url.replace(/^http:\/\//i, 'https://')))
+    Insta.getMediaInfoByUrl(req.query.url).then(info => res.redirect(info.thumbnail_url.replace(/^http:\/\//i, 'https://'))).catch(err => console.log(err))
   }
 }).listen(PORT, () => console.log(`Listening on ${ PORT }`))
