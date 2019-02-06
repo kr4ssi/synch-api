@@ -38,6 +38,7 @@ express().get('/redir', (req, res) => {
 }).use(express.json()).post("/add.json", (req, res) => {
   res.send(provideUserLink(req.query.url, req.body.url, md5ip(req)))
 }).get('/add.json', (req, res) => {
+  console.log(req.rawHeaders)
   if (req.query.userlink) return res.send(provideUserLink(req.query.url, req.query.userlink, md5ip(req)))
   if (!req.query.url || (!validUrl.isHttpsUri(req.query.url) && !validUrl.isHttpUri(req.query.url))) return res.send('must provide an url')
   const hourago = Date.now() - (60 * 60 * 1000)
@@ -100,10 +101,14 @@ express().get('/redir', (req, res) => {
           const title = body.match(/<meta property="og:title" content="([^""]+)/i)
           if (title) jsonObj.title = title[1]
           const url = validUrl.isHttpsUri('https://' + regMatch[1])
-          if (url) request(url, (err, res, body) => {
+          if (url) request({
+            url, headers: {
+              'User-Agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:65.0) Gecko/20100101 Firefox/65.0'
+            }
+          }, (err, res, body) => {
             if (err) return console.error(err)
             if (res.statusCode == 200) request('https://s1.' + regMatch[1], (err, res, body) => {
-              console.log(regMatch[1], res.statusCode, res.rawHeaders, body)
+              console.log(url, res.statusCode, res.rawHeaders, body)
               if (err) return console.error(err)
               if (res.statusCode == 200) {
                 console.log(regMatch[1], res.statusCode, res.rawHeaders, body)
