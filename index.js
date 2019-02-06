@@ -13,6 +13,7 @@ const PORT = process.env.PORT || 5001
 const md5ip = req => crypto.createHash('md5').update(forwarded(req).pop()).digest('hex')
 let STATICS = []
 const provideUserLink = (url, link, ip) => {
+  if (!url || (!validUrl.isHttpsUri(url) && !validUrl.isHttpUri(url))) return 'must provide an url'
   url = url.replace(/https?:\/\/o(pen)?load\..*\/(f|embed)\//, 'https://openload.co/f/')
   console.log(STATICS)
   STATICS = STATICS.filter(obj => obj.url != url || !obj.ip || obj.ip != ip)
@@ -36,8 +37,8 @@ express().get('/redir', (req, res) => {
 }).use(express.json()).post("/add.json", (req, res) => {
   res.send(provideUserLink(req.query.url, req.body.url, md5ip(req)))
 }).get('/add.json', (req, res) => {
-  if (!req.query.url || (!validUrl.isHttpsUri(req.query.url) && !validUrl.isHttpUri(req.query.url))) return res.send('must provide an url')
   if (req.query.userlink) return res.send(provideUserLink(req.query.url, req.query.userlink, md5ip(req)))
+  if (!req.query.url || (!validUrl.isHttpsUri(req.query.url) && !validUrl.isHttpUri(req.query.url))) return res.send('must provide an url')
   const hourago = Date.now() - (60 * 60 * 1000)
   STATICS = STATICS.filter(obj => obj.timestamp > hourago || obj.ip)
   const cache = STATICS.find(obj => obj.url === req.query.url.replace(/https?:\/\/o(pen)?load\..*\/(f|embed)\//, 'https://openload.co/f/') && !obj.ip)
