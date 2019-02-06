@@ -99,7 +99,7 @@ express().get('/redir', (req, res) => {
         if (regMatch) {
           jsonObj.title = body.match(/<meta property="og:title" content="([^""]+)/i)[1]
           request('https://s1.' + regMatch[1], (err, res, body) => {
-            console.log('https://s1.' + regMatch[1], res.rawHeaders, body)
+            console.log('https://s2.' + regMatch[1], res.statusCode, res.rawHeaders, body)
             if (err) return console.error(err)
             if (res.statusCode == 200) {
               regMatch = body.match(/', type: 'video\/mp4'},{url: \'\/\/([^\']+)/i)
