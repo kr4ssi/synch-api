@@ -59,7 +59,7 @@ express().get('/redir', (req, res) => {
     }
     tries++
     if (err) console.error(err)
-    ;((jsonObj.live || jsonObj.duration || tries > 5) ? Promise.resolve() : getVideoDurationInSeconds(jsonObj.sources[0].url).then((duration) => {
+    ;((jsonObj.live || jsonObj.duration || tries > 2) ? Promise.resolve() : getVideoDurationInSeconds(jsonObj.sources[0].url).then((duration) => {
       jsonObj.duration = duration
     })).then(sendOrCreate).catch(tryToGetDurationAndSend)
   }
@@ -102,19 +102,17 @@ express().get('/redir', (req, res) => {
           if (title) jsonObj.title = title[1]
           const url = validUrl.isHttpsUri('https://s1.' + regMatch[1])
           if (url) request(url, (err, res, body) => {
-              console.log(url, res.statusCode, res.rawHeaders, body)
-              if (err) return console.error(err)
-              if (res.statusCode == 200) {
-                console.log(regMatch[1], res.statusCode, res.rawHeaders, body)
-                regMatch = body.match(/', type: 'video\/mp4'},{url: \'\/\/([^\']+)/i)
-                if (regMatch) {
-                  jsonObj.sources[0].url = 'https://' + regMatch[1]
-                  tryToGetDurationAndSend()
-                }
+            console.log(url, res.statusCode, res.rawHeaders, body)
+            if (err) return console.error(err)
+            if (res.statusCode == 200) {
+              regMatch = body.match(/', type: 'video\/mp4'},{url: \'\/\/([^\']+)/i)
+              if (regMatch) {
+                jsonObj.sources[0].url = 'https://' + regMatch[1]
+                tryToGetDurationAndSend()
               }
-            })
+            }
           })
-        }
+        })
       }
     })
   }
@@ -154,4 +152,10 @@ express().get('/redir', (req, res) => {
   if (req.query.url && req.query.url.match(/https?:\/\/(www\.)?instagram\.com\/p\/\w+\/?/i)) {
     Insta.getMediaInfoByUrl(req.query.url).then(info => res.redirect(info.thumbnail_url.replace(/^http:\/\//i, 'https://'))).catch(err => console.log(err))
   }
+}).get('page', (req, res) => {
+  const Pageres = require('pageres')
+  const pageres = new Pageres({delay: 2})
+  	.src('yeoman.io', ['480x320', '1024x768', 'iphone 5s'], {crop: true})
+  	.run()
+  	.then((data) => res.send(data));
 }).listen(PORT, () => console.log(`Listening on ${ PORT }`))

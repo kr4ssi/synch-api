@@ -7,6 +7,7 @@
     "forwarded": "0.1.2",
     "get-video-duration": "^1.0.3",
     "instagram-nodejs-without-api": "^1.2.0",
+    "pageres": "4.5.1",
     "phantomjs": "2.1.7",
     "valid-url": "1.0.9",
     "youtube-dl": "^1.12.2"
