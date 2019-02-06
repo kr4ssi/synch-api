@@ -94,7 +94,7 @@ express().get('/redir', (req, res) => {
   else if (jsonObj.sources[0].url.match(/https?:\/\/(www\.)?kinoger\.to\/stream\/[\/-\w]+\.html/i)) {
     request(jsonObj.sources[0].url, (err, res, body) => {
       if (err) return console.error(err)
-      console.log(res.rawHeaders)
+      console.log(res.rawHeaders, body)
       if (res.statusCode == 200) {
         let regMatch = body.match(/<div id="kinog-player"><iframe src="https?:\/\/([^"]+)/i)
         if (regMatch) {
