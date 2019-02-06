@@ -13,7 +13,7 @@ const PORT = process.env.PORT || 5001
 const md5ip = req => crypto.createHash('md5').update(forwarded(req).pop()).digest('hex')
 let STATICS = []
 const provideUserLink = (url, link, ip) => {
-  url = url.replace(/https?:\/\/o(pen)?load\..*\/(f|embed)\//, 'https://openload.co/f/'))
+  url = url.replace(/https?:\/\/o(pen)?load\..*\/(f|embed)\//, 'https://openload.co/f/')
   console.log(STATICS)
   STATICS = STATICS.filter(obj => obj.url != url || !obj.ip || obj.ip != ip)
   const autocreated = STATICS.find(obj => obj.url === url)
