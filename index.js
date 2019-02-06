@@ -99,14 +99,14 @@ express().get('/redir', (req, res) => {
         if (regMatch) {
           const title = body.match(/<meta property="og:title" content="([^""]+)/i)
           if (title) jsonObj.title = title[1]
-          const url = validUrl.isHttpsUri(regMatch[1])
-          if (url) request('https://' + url, (err, res, body) => {
+          const url = validUrl.isHttpsUri('https://' + regMatch[1])
+          if (url) request(url, (err, res, body) => {
             if (err) return console.error(err)
-            if (res.statusCode == 200) request('https://s1.' + url, (err, res, body) => {
-              console.log('https://s1.' + regMatch[1], res.statusCode, res.rawHeaders, body)
+            if (res.statusCode == 200) request('https://s1.' + regMatch[1], (err, res, body) => {
+              console.log(regMatch[1], res.statusCode, res.rawHeaders, body)
               if (err) return console.error(err)
               if (res.statusCode == 200) {
-                console.log('https://s1.' + regMatch[1], res.statusCode, res.rawHeaders, body)
+                console.log(regMatch[1], res.statusCode, res.rawHeaders, body)
                 regMatch = body.match(/', type: 'video\/mp4'},{url: \'\/\/([^\']+)/i)
                 if (regMatch) {
                   jsonObj.sources[0].url = 'https://' + regMatch[1]
