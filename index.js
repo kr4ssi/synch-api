@@ -100,14 +100,8 @@ express().get('/redir', (req, res) => {
         if (regMatch) {
           const title = body.match(/<meta property="og:title" content="([^""]+)/i)
           if (title) jsonObj.title = title[1]
-          const url = validUrl.isHttpsUri('https://' + regMatch[1])
-          if (url) request({
-            url, headers: {
-              'User-Agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:65.0) Gecko/20100101 Firefox/65.0'
-            }
-          }, (err, res, body) => {
-            if (err) return console.error(err)
-            if (res.statusCode == 200) request('https://s1.' + regMatch[1], (err, res, body) => {
+          const url = validUrl.isHttpsUri('https://s1.' + regMatch[1])
+          if (url) request(url, (err, res, body) => {
               console.log(url, res.statusCode, res.rawHeaders, body)
               if (err) return console.error(err)
               if (res.statusCode == 200) {
