@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        ks user
 // @namespace   Violentmonkey Scripts
-// @include     /https:\/\/o(pen)?load\..*/(f|embed)/*/
+// @include     /https:\/\/o(pen)?load\..*\/(f|embed)\/.*/
 // ==/UserScript==
 
 const timer = setInterval(() => {
