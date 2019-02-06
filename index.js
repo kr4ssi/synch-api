@@ -97,17 +97,23 @@ express().get('/redir', (req, res) => {
       if (res.statusCode == 200) {
         let regMatch = body.match(/<div id="kinog-player"><iframe src="https?:\/\/([^"]+)/i)
         if (regMatch) {
-          jsonObj.title = body.match(/<meta property="og:title" content="([^""]+)/i)[1]
-          request('https://s2.' + regMatch[1], (err, res, body) => {
-            console.log('https://s2.' + regMatch[1], res.statusCode, res.rawHeaders, body)
+          const title = body.match(/<meta property="og:title" content="([^""]+)/i)
+          if (title) jsonObj.title = title[1]
+          const url = validUrl.isHttpsUri(regMatch[1])
+          if (url) request('https://' + url, (err, res, body) => {
             if (err) return console.error(err)
-            if (res.statusCode == 200) {
-              regMatch = body.match(/', type: 'video\/mp4'},{url: \'\/\/([^\']+)/i)
-              if (regMatch) {
-                jsonObj.sources[0].url = 'https://' + regMatch[1]
-                tryToGetDurationAndSend()
+            if (res.statusCode == 200) request('https://s1.' + url, (err, res, body) => {
+              console.log('https://s1.' + regMatch[1], res.statusCode, res.rawHeaders, body)
+              if (err) return console.error(err)
+              if (res.statusCode == 200) {
+                console.log('https://s1.' + regMatch[1], res.statusCode, res.rawHeaders, body)
+                regMatch = body.match(/', type: 'video\/mp4'},{url: \'\/\/([^\']+)/i)
+                if (regMatch) {
+                  jsonObj.sources[0].url = 'https://' + regMatch[1]
+                  tryToGetDurationAndSend()
+                }
               }
-            }
+            })
           })
         }
       }
@@ -115,36 +121,36 @@ express().get('/redir', (req, res) => {
   }
   else youtubedl.getInfo(jsonObj.sources[0].url, [], function(err, info) {
     if (err) return console.error(err)
-      if (!info.title) info = info[0];
-      const contentType = ext => {
-        const contentType = [
-          {type: 'video/mp4', ext: ['.mp4']},
-          {type: 'video/webm', ext: ['.webm']},
-          {type: 'application/x-mpegURL', ext: ['.m3u8']},
-          {type: 'video/ogg', ext: ['.ogv']},
-          {type: 'application/dash+xml', ext: ['.mpd']},
-          {type: 'rtmp/flv', ext: ['.flv']},
-          {type: 'audio/aac', ext: ['.aac']},
-          {type: 'audio/ogg', ext: ['.ogg']},
-          {type: 'audio/mpeg', ext: ['.mp3', '.m4a']}
-        ].find(contentType => contentType.ext.includes(ext))
-        if (typeof contentType != 'undefined') return contentType.type
-      }
-      jsonObj.title = !info.title.toLowerCase().startsWith(info.extractor_key.toLowerCase()) ? info.extractor_key + ' - ' + info.title : info.title
-      if (info.manifest_url) jsonObj.sources[0].url = info.manifest_url.replace(/^http:\/\//i, 'https://')
-      else {
-        jsonObj.sources[0].url = info.url.replace(/^http:\/\//i, 'https://')
-        jsonObj.sources[0].contentType = contentType(PATH.extname(URL.parse(jsonObj.sources[0].url).pathname)) || 'video/mp4'
-      }
-      if (allowedQuality.includes(info.height)) jsonObj.sources[0].quality = info.height;
-      if (info.thumbnail && info.thumbnail.match(/^https?:\/\//i)) jsonObj.thumbnail = info.thumbnail.replace(/^http:\/\//i, 'https://')
-      if (info._duration_raw) jsonObj.duration = info._duration_raw
-      tryToGetDurationAndSend()
+    if (!info.title) info = info[0];
+    const contentType = ext => {
+      const contentType = [
+        {type: 'video/mp4', ext: ['.mp4']},
+        {type: 'video/webm', ext: ['.webm']},
+        {type: 'application/x-mpegURL', ext: ['.m3u8']},
+        {type: 'video/ogg', ext: ['.ogv']},
+        {type: 'application/dash+xml', ext: ['.mpd']},
+        {type: 'rtmp/flv', ext: ['.flv']},
+        {type: 'audio/aac', ext: ['.aac']},
+        {type: 'audio/ogg', ext: ['.ogg']},
+        {type: 'audio/mpeg', ext: ['.mp3', '.m4a']}
+      ].find(contentType => contentType.ext.includes(ext))
+      if (typeof contentType != 'undefined') return contentType.type
+    }
+    jsonObj.title = !info.title.toLowerCase().startsWith(info.extractor_key.toLowerCase()) ? info.extractor_key + ' - ' + info.title : info.title
+    if (info.manifest_url) jsonObj.sources[0].url = info.manifest_url.replace(/^http:\/\//i, 'https://')
+    else {
+      jsonObj.sources[0].url = info.url.replace(/^http:\/\//i, 'https://')
+      jsonObj.sources[0].contentType = contentType(PATH.extname(URL.parse(jsonObj.sources[0].url).pathname)) || 'video/mp4'
+    }
+    if (allowedQuality.includes(info.height)) jsonObj.sources[0].quality = info.height;
+    if (info.thumbnail && info.thumbnail.match(/^https?:\/\//i)) jsonObj.thumbnail = info.thumbnail.replace(/^http:\/\//i, 'https://')
+    if (info._duration_raw) jsonObj.duration = info._duration_raw
+    tryToGetDurationAndSend()
   })
 }).get('/', (req, res) => {
   res.end()
 }).get('/ks.user.js', (req, res) => {
-    res.end(require('fs').readFileSync('ks.user.js', {encoding: "utf-8"}))
+  res.end(require('fs').readFileSync('ks.user.js', {encoding: "utf-8"}))
 }).get('/pic.jpg', (req, res) => {
   if (req.query.url && req.query.url.match(/https?:\/\/(www\.)?instagram\.com\/p\/\w+\/?/i)) {
     Insta.getMediaInfoByUrl(req.query.url).then(info => res.redirect(info.thumbnail_url.replace(/^http:\/\//i, 'https://'))).catch(err => console.log(err))
