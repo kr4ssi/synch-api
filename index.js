@@ -94,12 +94,12 @@ express().get('/redir', (req, res) => {
   else if (jsonObj.sources[0].url.match(/https?:\/\/(www\.)?kinoger\.to\/stream\/[\/-\w]+\.html/i)) {
     request(jsonObj.sources[0].url, (err, res, body) => {
       if (err) return console.error(err)
-      console.log(res.rawHeaders, body)
       if (res.statusCode == 200) {
         let regMatch = body.match(/<div id="kinog-player"><iframe src="https?:\/\/([^"]+)/i)
         if (regMatch) {
-          jsonObj.title = body.match(/<meta property="og:title" content="([^""]+)/i)[1],
+          jsonObj.title = body.match(/<meta property="og:title" content="([^""]+)/i)[1]
           request('https://s1.' + regMatch[1], (err, res, body) => {
+            console.log(res.rawHeaders, body)
             if (err) return console.error(err)
             if (res.statusCode == 200) {
               regMatch = body.match(/', type: 'video\/mp4'},{url: \'\/\/([^\']+)/i)
