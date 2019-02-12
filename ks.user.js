@@ -4,7 +4,7 @@
 // @version     1.0
 // @author      kr4ssi
 // @include     /https?:\/\/(openload.co|oload\.[a-z0-9-]{2,})\/(f|embed)\/[^/?#&]+/
-// @include     /https?:\/\/(?:streamango\.com|fruithosts\.net)\/(f|embed)\/[^/?#&]+/
+// @include     /https?:\/\/(streamango\.com|fruithosts\.net)\/(f|embed)\/[^/?#&]+/
 // ==/UserScript==
 
 const timer = setInterval(() => {

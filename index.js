@@ -20,12 +20,16 @@ const provideUserLink = (url, link, ip) => {
   STATICS = STATICS.filter(obj => obj.url != url || !obj.ip || obj.ip != ip)
   const autocreated = STATICS.find(obj => obj.url === url)
   if (typeof autocreated != 'undefined') {
-    const jsonObj = autocreated.jsonObj
-    jsonObj.sources[0].url = link.replace(/^http:\/\//i, 'https://')
+    const jsonObj = parseJson(autocreated.jsonObj, link.replace(/^http:\/\//i, 'https://'))
     STATICS.push({url, jsonObj, timestamp: Date.now(), ip})
     return jsonObj
   }
   else return 'no data'
+}
+const parseJson = (jsonObj, link) => {
+  const newjsonObj = JSON.parse(JSON.stringify(jsonObj))
+  newjsonObj.sources[0].url = link
+  return newjsonObj
 }
 express().get('/redir', (req, res) => {
   const cache = STATICS.filter(obj => obj.url === req.query.url)
@@ -45,17 +49,15 @@ express().get('/redir', (req, res) => {
   STATICS = STATICS.filter(obj => obj.timestamp > hourago || obj.ip)
   const cache = STATICS.find(obj => obj.url === oloadReplace(req.query.url) && !obj.ip)
   if (typeof cache != 'undefined') {
-    const newjsonObj = JSON.parse(JSON.stringify(cache.jsonObj))
-    if (req.query.redir) newjsonObj.sources[0].url = 'https://' + req.get('host') + '/redir?url=' + oloadReplace(req.query.url)
-    return res.send(newjsonObj)
+    if (req.query.redir) return res.send(parseJson(cache.jsonObj, 'https://' + req.get('host') + '/redir?url=' + oloadReplace(req.query.url)))
+    return res.send(cache.jsonObj)
   }
   let tries = 0
   const tryToGetDurationAndSend = err => {
     const sendOrCreate = () => {
       if (jsonObj.duration > 0) STATICS.push({url: oloadReplace(req.query.url), jsonObj, timestamp: Date.now()})
-      const newjsonObj = JSON.parse(JSON.stringify(jsonObj))
-      if (req.query.redir) newjsonObj.sources[0].url = 'https://' + req.get('host') + '/redir?url=' + oloadReplace(req.query.url)
-      res.send(newjsonObj)
+      if (req.query.redir) return res.send(parseJson(jsonObj, 'https://' + req.get('host') + '/redir?url=' + oloadReplace(req.query.url)))
+      res.send(jsonObj)
     }
     tries++
     if (err) console.error(err)
@@ -116,7 +118,7 @@ express().get('/redir', (req, res) => {
       }
     })
   }
-  else youtubedl.getInfo(jsonObj.sources[0].url, [], function(err, info) {
+  else youtubedl.getInfo(jsonObj.sources[0].url, ['-U'], function(err, info) {
     if (err) return console.error(err)
     if (!info.title) info = info[0];
     const contentType = ext => {
