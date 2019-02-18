@@ -29,30 +29,25 @@ express().get('/redir', (req, res) => {
 }).get('/add.json', (req, res) => {
   const url = fixurl(req.query.url)
   if (!url) return res.send('invalid url')
-  const sendJson = jsonObj => {
+  const timestamp = Date.now()
+  const hourago = timestamp - (60 * 60 * 1000)
+  const sendJson = (jsonObj, cache) => {
+    if (!cache) STATICS[url] = {
+      jsonObj,
+      timestamp,
+      userlinks: {}
+    }
     if (req.query.userlink) {
       STATICS[url].userlinks[md5ip(req)] = req.query.userlink
       console.log(util.inspect(STATICS))
     }
-    if (req.query.redir) {
-      const newjsonObj = JSON.parse(JSON.stringify(jsonObj))
-      newjsonObj.sources[0].url = 'https://' + req.get('host') + '/redir?url=' + url
-      return res.send(newjsonObj)
-    }
-    res.send(jsonObj)
+    if (!req.query.redir) return res.send(jsonObj)
+    const newjsonObj = JSON.parse(JSON.stringify(jsonObj))
+    newjsonObj.sources[0].url = 'https://' + req.get('host') + '/redir?url=' + url
+    res.send(newjsonObj)
   }
-  const hourago = Date.now() - (60 * 60 * 1000)
-  if (typeof STATICS[url] != 'undefined' && STATICS[url].timestamp > hourago) return sendJson(STATICS[url].jsonObj)
-  const getDurationAndSend = () => {
-    getDuration(jsonObj).then(jsonObj => {
-      STATICS[url] = {
-        jsonObj,
-        timestamp: Date.now(),
-        userlinks: {}
-      }
-      sendJson(jsonObj)
-    }).catch(err => res.send('can\'t get duration'))
-  }
+  if (typeof STATICS[url] != 'undefined' && STATICS[url].timestamp > hourago) return sendJson(STATICS[url].jsonObj, true)
+  const getDurationAndSend = () => getDuration(jsonObj).then(sendJson).catch(err => res.send('can\'t get duration'))
   const jsonObj = {
     title: decodeURIComponent(req.query.title),
     live: req.query.live == "true",
