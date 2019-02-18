@@ -42,7 +42,7 @@ express().get('/redir', (req, res) => {
     }
     if (!req.query.redir) return res.send(jsonObj)
     const newjsonObj = JSON.parse(JSON.stringify(jsonObj))
-    newjsonObj.sources[0].url = req.protocol + '://' + req.get('host') + '/redir?url=' + url
+    newjsonObj.sources[0].url = 'https://' + req.get('host') + '/redir?url=' + url
     res.send(newjsonObj)
   }
   if (typeof STATICS[url] != 'undefined' && STATICS[url].timestamp > hourago) return sendJson(STATICS[url].jsonObj, true)
