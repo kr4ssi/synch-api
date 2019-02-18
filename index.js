@@ -34,7 +34,7 @@ express().get('/redir', (req, res) => {
   if (cache.length < 1) res.send('not found')
   const user = cache.find(obj => obj.ip === md5ip(req))
   if (typeof user != 'undefined') res.redirect(user.jsonObj.sources[0].url)
-  else res.redirect(cache[0].jsonObj.sources[0].url)
+  else res.redirect('https://ia600700.us.archive.org/26/items/youtube-Hazd5tl37iM/ZDF_Testbild_1988-Hazd5tl37iM.mp4')
 }).use(express.json()).post("/add.json", (req, res) => {
   res.send(provideUserLink(req.query.url, req.body.url, md5ip(req)))
 }).get('/add.json', (req, res) => {
