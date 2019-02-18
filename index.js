@@ -14,11 +14,11 @@ const STATICS = {}
 const md5ip = req => crypto.createHash('md5').update(forwarded(req).pop()).digest('hex')
 const fixurl = url => {
   if (typeof url === 'undefined') return false
-  url = decodeURIComponent(url)
-  url = validUrl.isHttpsUri(url) || validUrl.isHttpUri(url)
+  url = decodeURIComponent(url).replace(/^http:\/\//i, 'https://')
+  url = validUrl.isHttpsUri(url)
   if (!url) return false
-  url = url.replace(/https?:\/\/(openload.co|oload\.[a-z0-9-]{2,})\/(f|embed)\//, 'https://openload.co/f/')
-  return url.replace(/https?:\/\/(streamango\.com|fruithosts\.net)\/(f|embed)\//, 'https://streamango.com/f/')
+  url = url.replace(/https:\/\/(openload.co|oload\.[a-z0-9-]{2,})\/(f|embed)\//, 'https://openload.co/f/')
+  return url.replace(/https:\/\/(streamango\.com|fruithosts\.net)\/(f|embed)\//, 'https://streamango.com/f/')
 }
 express().get('/redir', (req, res) => {
   const url = fixurl(req.query.url)
@@ -42,7 +42,7 @@ express().get('/redir', (req, res) => {
     }
     if (!req.query.redir) return res.send(jsonObj)
     const newjsonObj = JSON.parse(JSON.stringify(jsonObj))
-    newjsonObj.sources[0].url = 'https://' + req.get('host') + '/redir?url=' + url
+    newjsonObj.sources[0].url = req.protocol + '://' + req.get('host') + '/redir?url=' + url
     res.send(newjsonObj)
   }
   if (typeof STATICS[url] != 'undefined' && STATICS[url].timestamp > hourago) return sendJson(STATICS[url].jsonObj, true)
@@ -53,7 +53,7 @@ express().get('/redir', (req, res) => {
     duration: Number(req.query.duration) || 0,
     sources: [
       {
-        url: url.replace(/^http:\/\//i, 'https://'),
+        url,
         quality: req.query.quality && allowedQuality.includes(Number(req.query.quality)) ? Number(req.query.quality) : 720,
         contentType: req.query.type && decodeURIComponent(req.query.type) || 'application/x-mpegURL'
       }
