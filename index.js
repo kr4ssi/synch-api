@@ -19,12 +19,10 @@ const provideUserLink = (url, link, ip) => {
   console.log(STATICS)
   STATICS = STATICS.filter(obj => obj.url != url || !obj.ip || obj.ip != ip)
   const autocreated = STATICS.find(obj => obj.url === url)
-  if (typeof autocreated != 'undefined') {
-    const jsonObj = parseJson(autocreated.jsonObj, link.replace(/^http:\/\//i, 'https://'))
-    STATICS.push({url, jsonObj, timestamp: Date.now(), ip})
-    return jsonObj
-  }
-  else return 'no data'
+  if (typeof autocreated === 'undefined') return 'no data'
+  const jsonObj = parseJson(autocreated.jsonObj, link.replace(/^http:\/\//i, 'https://'))
+  STATICS.push({url, jsonObj, timestamp: Date.now(), ip})
+  return jsonObj
 }
 const parseJson = (jsonObj, link) => {
   const newjsonObj = JSON.parse(JSON.stringify(jsonObj))
@@ -33,7 +31,7 @@ const parseJson = (jsonObj, link) => {
 }
 express().get('/redir', (req, res) => {
   const cache = STATICS.filter(obj => obj.url === req.query.url)
-  if (cache.length > 0){
+  if (cache.length > 0) {
     const user = cache.find(obj => obj.ip === md5ip(req))
     if (typeof user != 'undefined') res.redirect(user.jsonObj.sources[0].url)
     else res.redirect(cache[0].jsonObj.sources[0].url)
@@ -42,7 +40,6 @@ express().get('/redir', (req, res) => {
 }).use(express.json()).post("/add.json", (req, res) => {
   res.send(provideUserLink(req.query.url, req.body.url, md5ip(req)))
 }).get('/add.json', (req, res) => {
-  console.log(req.rawHeaders)
   if (req.query.userlink) return res.send(provideUserLink(req.query.url, req.query.userlink, md5ip(req)))
   if (!req.query.url || (!validUrl.isHttpsUri(req.query.url) && !validUrl.isHttpUri(req.query.url))) return res.send('must provide an url')
   const hourago = Date.now() - (60 * 60 * 1000)
@@ -52,20 +49,6 @@ express().get('/redir', (req, res) => {
     if (req.query.redir) return res.send(parseJson(cache.jsonObj, 'https://' + req.get('host') + '/redir?url=' + oloadReplace(req.query.url)))
     return res.send(cache.jsonObj)
   }
-  let tries = 0
-  const tryToGetDurationAndSend = err => {
-    const sendOrCreate = () => {
-      if (jsonObj.duration > 0) STATICS.push({url: oloadReplace(req.query.url), jsonObj, timestamp: Date.now()})
-      if (req.query.redir) return res.send(parseJson(jsonObj, 'https://' + req.get('host') + '/redir?url=' + oloadReplace(req.query.url)))
-      res.send(jsonObj)
-    }
-    tries++
-    if (err) console.error(err)
-    ;((jsonObj.live || jsonObj.duration || tries > 2) ? Promise.resolve() : getVideoDurationInSeconds(jsonObj.sources[0].url).then((duration) => {
-      jsonObj.duration = duration
-    })).then(sendOrCreate).catch(tryToGetDurationAndSend)
-  }
-  const allowedQuality = [240, 360, 480, 540, 720, 1080, 1440]
   const jsonObj = {
     title: decodeURIComponent(req.query.title),
     live: req.query.live == "true",
@@ -118,7 +101,41 @@ express().get('/redir', (req, res) => {
       }
     })
   }
-  else youtubedl.getInfo(jsonObj.sources[0].url, ['-U'], function(err, info) {
+  else getInfo(jsonObj, jsonObj => {
+    tryToGetDurationAndSend()
+  })
+  const tryToGetDurationAndSend = () => {
+    tryToGetDuration(jsonObj, jsonObj => {
+      if (jsonObj.duration > 0) STATICS.push({url: oloadReplace(req.query.url), jsonObj, timestamp: Date.now()})
+      if (req.query.redir) return res.send(parseJson(jsonObj, 'https://' + req.get('host') + '/redir?url=' + oloadReplace(req.query.url)))
+      res.send(jsonObj)
+    })
+  }
+}).get('/', (req, res) => {
+  res.end()
+}).get('/ks.user.js', (req, res) => {
+  res.end(require('fs').readFileSync('ks.user.js', {encoding: "utf-8"}))
+}).get('/pic.jpg', (req, res) => {
+  if (req.query.url && req.query.url.match(/https?:\/\/(www\.)?instagram\.com\/p\/\w+\/?/i)) {
+    Insta.getMediaInfoByUrl(req.query.url).then(info => res.redirect(info.thumbnail_url.replace(/^http:\/\//i, 'https://'))).catch(err => console.log(err))
+  }
+}).listen(PORT, () => console.log(`Listening on ${ PORT }`))
+const allowedQuality = [240, 360, 480, 540, 720, 1080, 1440]
+const tryToGetDuration = (jsonObj, cb) => {
+  let tries = 0
+  const getDuration = err => {
+    tries++
+    if (err) console.error(err)
+    ;((jsonObj.live || jsonObj.duration || tries > 2) ? Promise.resolve() : getVideoDurationInSeconds(jsonObj.sources[0].url).then((duration) => {
+      jsonObj.duration = duration
+    })).then(() => {
+      cb(jsonObj)
+    }).catch(getDuration)
+  }
+  getDuration()
+}
+const getInfo = (jsonObj, cb) => {
+  youtubedl.getInfo(jsonObj.sources[0].url, ['-U'], function(err, info) {
     if (err) return console.error(err)
     if (!info.title) info = info[0];
     const contentType = ext => {
@@ -141,17 +158,9 @@ express().get('/redir', (req, res) => {
       jsonObj.sources[0].url = info.url.replace(/^http:\/\//i, 'https://')
       jsonObj.sources[0].contentType = contentType(PATH.extname(URL.parse(jsonObj.sources[0].url).pathname)) || 'video/mp4'
     }
-    if (allowedQuality.includes(info.height)) jsonObj.sources[0].quality = info.height;
+    if (allowedQuality.includes(info.width)) jsonObj.sources[0].quality = info.width;
     if (info.thumbnail && info.thumbnail.match(/^https?:\/\//i)) jsonObj.thumbnail = info.thumbnail.replace(/^http:\/\//i, 'https://')
     if (info._duration_raw) jsonObj.duration = info._duration_raw
-    tryToGetDurationAndSend()
+    cb(jsonObj)
   })
-}).get('/', (req, res) => {
-  res.end()
-}).get('/ks.user.js', (req, res) => {
-  res.end(require('fs').readFileSync('ks.user.js', {encoding: "utf-8"}))
-}).get('/pic.jpg', (req, res) => {
-  if (req.query.url && req.query.url.match(/https?:\/\/(www\.)?instagram\.com\/p\/\w+\/?/i)) {
-    Insta.getMediaInfoByUrl(req.query.url).then(info => res.redirect(info.thumbnail_url.replace(/^http:\/\//i, 'https://'))).catch(err => console.log(err))
-  }
-}).listen(PORT, () => console.log(`Listening on ${ PORT }`))
+}
