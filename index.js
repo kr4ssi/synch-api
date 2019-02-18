@@ -22,22 +22,21 @@ const fixurl = url => {
 }
 express().get('/redir', (req, res) => {
   const url = fixurl(req.query.url)
-  if (!url) return res.send('invalid url')
-  if (STATICS[url] && STATICS[url].userlinks && STATICS[url].userlinks[md5ip(req)]) res.redirect(STATICS[url].userlinks[md5ip(req)])
+  if (url && STATICS[url] && STATICS[url].user && STATICS[url].user[md5ip(req)]) res.redirect(STATICS[url].user[md5ip(req)])
   else res.redirect('https://ia600700.us.archive.org/26/items/youtube-Hazd5tl37iM/ZDF_Testbild_1988-Hazd5tl37iM.mp4')
 }).get('/add.json', (req, res) => {
   const url = fixurl(req.query.url)
-  if (!url) return res.send('invalid url')
+  if (!url) return res.send({title: 'invalid url'})
   const timestamp = Date.now()
   const hourago = timestamp - (60 * 60 * 1000)
   const sendJson = (jsonObj, cache) => {
     if (!cache) STATICS[url] = {
       jsonObj,
       timestamp,
-      userlinks: {}
+      user: {}
     }
     if (req.query.userlink) {
-      STATICS[url].userlinks[md5ip(req)] = req.query.userlink
+      STATICS[url].user[md5ip(req)] = req.query.userlink
       console.log(STATICS[url])
     }
     if (!req.query.redir) return res.send(jsonObj)
@@ -46,7 +45,7 @@ express().get('/redir', (req, res) => {
     res.send(newjsonObj)
   }
   if (typeof STATICS[url] != 'undefined' && STATICS[url].timestamp > hourago) return sendJson(STATICS[url].jsonObj, true)
-  const getDurationAndSend = () => getDuration(jsonObj).then(sendJson).catch(err => res.send('can\'t get duration'))
+  const getDurationAndSend = () => getDuration(jsonObj).then(sendJson).catch(err => res.send({title: 'can\'t get duration'}))
   const jsonObj = {
     title: decodeURIComponent(req.query.title),
     live: req.query.live == "true",
@@ -79,7 +78,7 @@ express().get('/redir', (req, res) => {
     getDurationAndSend()
   }).catch(err => {
     console.error(err)
-    res.send('can\'t get info')
+    res.send({title: 'can\'t get info'})
   })
 }).get('/', (req, res) => {
   res.end()
