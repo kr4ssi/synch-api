@@ -9,7 +9,6 @@ const PATH = require('path')
 const crypto = require('crypto')
 const forwarded = require('forwarded')
 const validUrl = require('valid-url')
-const util = require('util')
 const PORT = process.env.PORT || 5001
 const STATICS = {}
 const md5ip = req => crypto.createHash('md5').update(forwarded(req).pop()).digest('hex')
@@ -39,7 +38,7 @@ express().get('/redir', (req, res) => {
     }
     if (req.query.userlink) {
       STATICS[url].userlinks[md5ip(req)] = req.query.userlink
-      console.log(util.inspect(STATICS))
+      console.log(STATICS[url])
     }
     if (!req.query.redir) return res.send(jsonObj)
     const newjsonObj = JSON.parse(JSON.stringify(jsonObj))
