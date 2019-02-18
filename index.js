@@ -31,12 +31,10 @@ const parseJson = (jsonObj, link) => {
 }
 express().get('/redir', (req, res) => {
   const cache = STATICS.filter(obj => obj.url === req.query.url)
-  if (cache.length > 0) {
-    const user = cache.find(obj => obj.ip === md5ip(req))
-    if (typeof user != 'undefined') res.redirect(user.jsonObj.sources[0].url)
-    else res.redirect(cache[0].jsonObj.sources[0].url)
-  }
-  else res.send('not found')
+  if (cache.length < 1) res.send('not found')
+  const user = cache.find(obj => obj.ip === md5ip(req))
+  if (typeof user != 'undefined') res.redirect(user.jsonObj.sources[0].url)
+  else res.redirect(cache[0].jsonObj.sources[0].url)
 }).use(express.json()).post("/add.json", (req, res) => {
   res.send(provideUserLink(req.query.url, req.body.url, md5ip(req)))
 }).get('/add.json', (req, res) => {
@@ -60,6 +58,13 @@ express().get('/redir', (req, res) => {
         contentType: req.query.type && decodeURIComponent(req.query.type) || 'application/x-mpegURL'
       }
     ]
+  }
+  const tryToGetDurationAndSend = () => {
+    tryToGetDuration(jsonObj, jsonObj => {
+      if (jsonObj.duration > 0) STATICS.push({url: oloadReplace(req.query.url), jsonObj, timestamp: Date.now()})
+      if (req.query.redir) return res.send(parseJson(jsonObj, 'https://' + req.get('host') + '/redir?url=' + oloadReplace(req.query.url)))
+      res.send(jsonObj)
+    })
   }
   if (jsonObj.sources[0].url.match(/.*\.m3u8/)) {
     tryToGetDurationAndSend()
@@ -104,13 +109,6 @@ express().get('/redir', (req, res) => {
   else getInfo(jsonObj, jsonObj => {
     tryToGetDurationAndSend()
   })
-  const tryToGetDurationAndSend = () => {
-    tryToGetDuration(jsonObj, jsonObj => {
-      if (jsonObj.duration > 0) STATICS.push({url: oloadReplace(req.query.url), jsonObj, timestamp: Date.now()})
-      if (req.query.redir) return res.send(parseJson(jsonObj, 'https://' + req.get('host') + '/redir?url=' + oloadReplace(req.query.url)))
-      res.send(jsonObj)
-    })
-  }
 }).get('/', (req, res) => {
   res.end()
 }).get('/ks.user.js', (req, res) => {
