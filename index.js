@@ -9,43 +9,49 @@ const PATH = require('path')
 const crypto = require('crypto')
 const forwarded = require('forwarded')
 const validUrl = require('valid-url')
+const util = require('util')
 const PORT = process.env.PORT || 5001
-let STATICS = []
+const STATICS = {}
 const md5ip = req => crypto.createHash('md5').update(forwarded(req).pop()).digest('hex')
-const oloadReplace = url => url.replace(/https?:\/\/(openload.co|oload\.[a-z0-9-]{2,})\/(f|embed)\//, 'https://openload.co/f/').replace(/https?:\/\/(streamango\.com|fruithosts\.net)\/(f|embed)\//, 'https://streamango.com/f/')
-const provideUserLink = (url, link, ip) => {
-  if (!url || (!validUrl.isHttpsUri(url) && !validUrl.isHttpUri(url))) return 'must provide an url'
-  url = oloadReplace(url)
-  console.log(STATICS)
-  STATICS = STATICS.filter(obj => obj.url != url || !obj.ip || obj.ip != ip)
-  const autocreated = STATICS.find(obj => obj.url === url)
-  if (typeof autocreated === 'undefined') return 'no data'
-  const jsonObj = parseJson(autocreated.jsonObj, link.replace(/^http:\/\//i, 'https://'))
-  STATICS.push({url, jsonObj, timestamp: Date.now(), ip})
-  return jsonObj
-}
-const parseJson = (jsonObj, link) => {
-  const newjsonObj = JSON.parse(JSON.stringify(jsonObj))
-  newjsonObj.sources[0].url = link
-  return newjsonObj
+const fixurl = url => {
+  if (typeof url === 'undefined') return false
+  url = decodeURIComponent(url)
+  url = validUrl.isHttpsUri(url) || validUrl.isHttpUri(url)
+  if (!url) return false
+  url = url.replace(/https?:\/\/(openload.co|oload\.[a-z0-9-]{2,})\/(f|embed)\//, 'https://openload.co/f/')
+  return url.replace(/https?:\/\/(streamango\.com|fruithosts\.net)\/(f|embed)\//, 'https://streamango.com/f/')
 }
 express().get('/redir', (req, res) => {
-  const cache = STATICS.filter(obj => obj.url === req.query.url)
-  if (cache.length < 1) res.send('not found')
-  const user = cache.find(obj => obj.ip === md5ip(req))
-  if (typeof user != 'undefined') res.redirect(user.jsonObj.sources[0].url)
+  const url = fixurl(req.query.url)
+  if (!url) return res.send('invalid url')
+  if (STATICS[url] && STATICS[url].userlinks && STATICS[url].userlinks[md5ip(req)]) res.redirect(STATICS[url].userlinks[md5ip(req)])
   else res.redirect('https://ia600700.us.archive.org/26/items/youtube-Hazd5tl37iM/ZDF_Testbild_1988-Hazd5tl37iM.mp4')
-}).use(express.json()).post("/add.json", (req, res) => {
-  res.send(provideUserLink(req.query.url, req.body.url, md5ip(req)))
 }).get('/add.json', (req, res) => {
-  if (req.query.userlink) return res.send(provideUserLink(req.query.url, req.query.userlink, md5ip(req)))
-  if (!req.query.url || (!validUrl.isHttpsUri(req.query.url) && !validUrl.isHttpUri(req.query.url))) return res.send('must provide an url')
+  const url = fixurl(req.query.url)
+  if (!url) return res.send('invalid url')
+  const sendJson = jsonObj => {
+    if (req.query.userlink) {
+      STATICS[url].userlinks[md5ip(req)] = req.query.userlink
+      console.log(util.inspect(STATICS))
+    }
+    if (req.query.redir) {
+      const newjsonObj = JSON.parse(JSON.stringify(jsonObj))
+      newjsonObj.sources[0].url = 'https://' + req.get('host') + '/redir?url=' + url
+      return res.send(newjsonObj)
+    }
+    res.send(jsonObj)
+  }
   const hourago = Date.now() - (60 * 60 * 1000)
-  STATICS = STATICS.filter(obj => obj.timestamp > hourago || obj.ip)
-  const cache = STATICS.find(obj => obj.url === oloadReplace(req.query.url) && !obj.ip)
-  if (typeof cache != 'undefined') {
-    if (req.query.redir) return res.send(parseJson(cache.jsonObj, 'https://' + req.get('host') + '/redir?url=' + oloadReplace(req.query.url)))
-    return res.send(cache.jsonObj)
+  if (typeof STATICS[url] != 'undefined' && STATICS[url].timestamp > hourago) return sendJson(STATICS[url].jsonObj)
+  const getDurationAndSend = () => {
+    getDuration(jsonObj).then(jsonObj => {
+      STATICS[url] = {
+        jsonObj,
+        timestamp: Date.now(),
+        userlinks: {}
+      }
+      sendJson(jsonObj)
+    }).catch(err => res.send('can\'t get duration'))
   }
   const jsonObj = {
     title: decodeURIComponent(req.query.title),
@@ -53,21 +59,14 @@ express().get('/redir', (req, res) => {
     duration: Number(req.query.duration) || 0,
     sources: [
       {
-        url: decodeURIComponent(req.query.url).replace(/^http:\/\//i, 'https://'),
+        url: url.replace(/^http:\/\//i, 'https://'),
         quality: req.query.quality && allowedQuality.includes(Number(req.query.quality)) ? Number(req.query.quality) : 720,
         contentType: req.query.type && decodeURIComponent(req.query.type) || 'application/x-mpegURL'
       }
     ]
   }
-  const tryToGetDurationAndSend = () => {
-    tryToGetDuration(jsonObj, jsonObj => {
-      if (jsonObj.duration > 0) STATICS.push({url: oloadReplace(req.query.url), jsonObj, timestamp: Date.now()})
-      if (req.query.redir) return res.send(parseJson(jsonObj, 'https://' + req.get('host') + '/redir?url=' + oloadReplace(req.query.url)))
-      res.send(jsonObj)
-    })
-  }
   if (jsonObj.sources[0].url.match(/.*\.m3u8/)) {
-    tryToGetDurationAndSend()
+    getDurationAndSend()
   }
   else if (jsonObj.sources[0].url.match(/https?:\/\/(www\.)?nxload\.com\/(embed-)?\w+\.html/i)) {
     request(jsonObj.sources[0].url.replace(/embed-/i, ''), (err, res, body) => {
@@ -77,37 +76,16 @@ express().get('/redir', (req, res) => {
         if (regMatch) {
           jsonObj.sources[0].url = regMatch[1].replace(/^http:\/\//i, 'https://')
           jsonObj.title = body.match(/<title>Watch ([^<]+)/i)[1],
-          tryToGetDurationAndSend()
+          getDurationAndSend()
         }
       }
     })
   }
-  else if (jsonObj.sources[0].url.match(/https?:\/\/(www\.)?kinoger\.to\/stream\/[\/-\w]+\.html/i)) {
-    request(jsonObj.sources[0].url, (err, res, body) => {
-      if (err) return console.error(err)
-      if (res.statusCode == 200) {
-        let regMatch = body.match(/<div id="kinog-player"><iframe src="https?:\/\/([^"]+)/i)
-        if (regMatch) {
-          const title = body.match(/<meta property="og:title" content="([^""]+)/i)
-          if (title) jsonObj.title = title[1]
-          const url = validUrl.isHttpsUri('https://s1.' + regMatch[1])
-          if (url) request(url, (err, res, body) => {
-            console.log(url, res.statusCode, res.rawHeaders, body)
-            if (err) return console.error(err)
-            if (res.statusCode == 200) {
-              regMatch = body.match(/', type: 'video\/mp4'},{url: \'\/\/([^\']+)/i)
-              if (regMatch) {
-                jsonObj.sources[0].url = 'https://' + regMatch[1]
-                tryToGetDurationAndSend()
-              }
-            }
-          })
-        }
-      }
-    })
-  }
-  else getInfo(jsonObj, jsonObj => {
-    tryToGetDurationAndSend()
+  else getInfo(jsonObj).then(jsonObj => {
+    getDurationAndSend()
+  }).catch(err => {
+    console.error(err)
+    res.send('can\'t get info')
   })
 }).get('/', (req, res) => {
   res.end()
@@ -115,26 +93,35 @@ express().get('/redir', (req, res) => {
   res.end(require('fs').readFileSync('ks.user.js', {encoding: "utf-8"}))
 }).get('/pic.jpg', (req, res) => {
   if (req.query.url && req.query.url.match(/https?:\/\/(www\.)?instagram\.com\/p\/\w+\/?/i)) {
-    Insta.getMediaInfoByUrl(req.query.url).then(info => res.redirect(info.thumbnail_url.replace(/^http:\/\//i, 'https://'))).catch(err => console.log(err))
+    Insta.getMediaInfoByUrl(req.query.url).then(info => {
+      res.redirect(info.thumbnail_url.replace(/^http:\/\//i, 'https://'))
+    }).catch(err => console.log(err))
   }
+}).use(express.json()).post("/add.json", (req, res) => {
+  //res.send(provideUserLink(req.query.url, req.body.url, md5ip(req)))
 }).listen(PORT, () => console.log(`Listening on ${ PORT }`))
 const allowedQuality = [240, 360, 480, 540, 720, 1080, 1440]
-const tryToGetDuration = (jsonObj, cb) => {
-  let tries = 0
-  const getDuration = err => {
-    tries++
-    if (err) console.error(err)
-    ;((jsonObj.live || jsonObj.duration || tries > 2) ? Promise.resolve() : getVideoDurationInSeconds(jsonObj.sources[0].url).then((duration) => {
-      jsonObj.duration = duration
-    })).then(() => {
-      cb(jsonObj)
-    }).catch(getDuration)
-  }
-  getDuration()
+const getDuration = jsonObj => {
+  return new Promise((resolve, reject) => {
+    if (jsonObj.live || jsonObj.duration) return resolve(jsonObj)
+    let tries = 0
+    const tryToGetDuration = () => {
+      tries++
+      getVideoDurationInSeconds(jsonObj.sources[0].url).then(duration => {
+        jsonObj.duration = duration
+        resolve(jsonObj)
+      }).catch(err => {
+        console.error(err)
+        if (tries > 2) return reject(tries)
+        tryToGetDuration()
+      })
+    }
+    tryToGetDuration()
+  })
 }
-const getInfo = (jsonObj, cb) => {
-  youtubedl.getInfo(jsonObj.sources[0].url, ['-U'], function(err, info) {
-    if (err) return console.error(err)
+const getInfo = (jsonObj) => {
+  return new Promise((resolve, reject) => youtubedl.getInfo(jsonObj.sources[0].url, ['-U'], (err, info) => {
+    if (err) return reject(err)
     if (!info.title) info = info[0];
     const contentType = ext => {
       const contentType = [
@@ -159,6 +146,6 @@ const getInfo = (jsonObj, cb) => {
     if (allowedQuality.includes(info.width)) jsonObj.sources[0].quality = info.width;
     if (info.thumbnail && info.thumbnail.match(/^https?:\/\//i)) jsonObj.thumbnail = info.thumbnail.replace(/^http:\/\//i, 'https://')
     if (info._duration_raw) jsonObj.duration = info._duration_raw
-    cb(jsonObj)
-  })
+    resolve(jsonObj)
+  }))
 }
