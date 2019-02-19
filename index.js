@@ -113,7 +113,9 @@ const getDuration = jsonObj => {
   })
 }
 const getInfo = (jsonObj) => {
-  return new Promise((resolve, reject) => youtubedl.getInfo(jsonObj.sources[0].url, ['-U'], (err, info) => {
+  return new Promise((resolve, reject) => youtubedl.getInfo(jsonObj.sources[0].url, ['-U'], {
+    maxBuffer: Infinity
+  }, (err, info) => {
     if (err) return reject(err)
     if (!info.title) info = info[0];
     const contentType = ext => {
