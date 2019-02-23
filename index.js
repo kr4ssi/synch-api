@@ -6,7 +6,6 @@ const Instagram = require('instagram-nodejs-without-api')
 const Insta = new Instagram()
 const URL = require('url')
 const PATH = require('path')
-var mime = require('mime-types')
 const crypto = require('crypto')
 const forwarded = require('forwarded')
 const validUrl = require('valid-url')
@@ -59,19 +58,17 @@ express().get('/redir', (req, res) => {
       }
     ]
   }
-  if (jsonObj.sources[0].url.match(/.*\.m3u8/)) {
+  if (url.match(/.*\.m3u8/)) {
     getDurationAndSend(jsonObj)
   }
-  else if (jsonObj.sources[0].url.match(/https?:\/\/(www\.)?nxload\.com\/(embed-)?\w+\.html/i)) {
-    request(jsonObj.sources[0].url.replace(/embed-/i, ''), (err, res, body) => {
-      if (err) return console.error(err)
-      if (res.statusCode == 200) {
-        const regMatch = body.match(/new Clappr\.Player\({\s+sources: \["([^"]+)/i)
-        if (regMatch) {
-          jsonObj.sources[0].url = regMatch[1].replace(/^http:\/\//i, 'https://')
-          jsonObj.title = body.match(/<title>Watch ([^<]+)/i)[1],
-          getDurationAndSend(jsonObj)
-        }
+  else if (url.match(/https?:\/\/(?:www\.)?nxload\.com\/(?:embed-)?(\w+)/i)) {
+    request(url.replace(/embed-/i, ''), (err, res, body) => {
+      if (err || res.statusCode != 200) return console.error(err || body)
+      const regMatch = body.match(/new Clappr\.Player\({\s+sources: \["([^"]+)/i)
+      if (regMatch) {
+        jsonObj.sources[0].url = regMatch[1].replace(/^http:\/\//i, 'https://')
+        jsonObj.title = body.match(/<title>Watch ([^<]+)/i)[1],
+        getDurationAndSend(jsonObj)
       }
     })
   }
@@ -109,19 +106,9 @@ const getDuration = jsonObj => {
     tryToGetDuration()
   })
 }
-const proxy = express().get('*', (req, res) => res.send(console.log(req.rawHeaders))).listen(5002)
 const getInfo = (url, jsonObj) => {
   return new Promise((resolve, reject) => {
-    if (!jsonObj) {
-      youtubedl.getInfo(url, ['--verbose', '--no-colors'], {}, (err, info) => console.log(err, info))
-      const out = {}
-      Object.keys(info).sort((a, b) => a.localeCompare(b, undefined, {sensitivity: 'base'}))
-      .forEach(key => out[key] = info[key])
-      return resolve(out)
-    }
-    const video = youtubedl(url, ['--verbose', '-U'], {
-      maxBuffer: 1024 * 1024 * 10
-    })
+    const video = youtubedl(url, ['--verbose', '-U'])
     video.on('info', info => {
       if (!jsonObj) {
         const out = {}
@@ -140,20 +127,19 @@ const getInfo = (url, jsonObj) => {
           {type: 'audio/aac', ext: ['.aac']},
           {type: 'audio/ogg', ext: ['.ogg']},
           {type: 'audio/mpeg', ext: ['.mp3', '.m4a']}
-        ].find(contentType => contentType.ext.includes(ext))
-        if (typeof contentType != 'undefined') return contentType.type
+        ].find(contentType => contentType.ext.includes(ext)) || {}
+        return contentType.type
       }
-      jsonObj.title = info.extractor_key + ' - ' + info.title.replace(new RegExp('^' + info.extractor_key, 'i'))
+      jsonObj.title = jsonObj.title || info.extractor_key + ' - ' + info.title.replace(new RegExp('^' + info.extractor_key, 'i'))
       if (info.manifest_url) jsonObj.sources[0].url = info.manifest_url.replace(/^http:\/\//i, 'https://')
       else {
         jsonObj.sources[0].url = info.url.replace(/^http:\/\//i, 'https://')
-        jsonObj.sources[0].contentType = contentType(PATH.extname(URL.parse(jsonObj.sources[0].url).pathname)) || 'video/mp4'
+        jsonObj.sources[0].contentType = contentType(PATH.extname(URL.parse(info.url).pathname)) || 'video/mp4'
       }
       if (allowedQuality.includes(info.width)) jsonObj.sources[0].quality = info.width;
       if (info.thumbnail && info.thumbnail.match(/^https?:\/\//i)) jsonObj.thumbnail = info.thumbnail.replace(/^http:\/\//i, 'https://')
       if (info._duration_raw) resolve(Object.assign(jsonObj, {duration: info._duration_raw}))
       else getVideoDurationInSeconds(video).then(duration => {
-        console.log('got duration')
         resolve(Object.assign(jsonObj, {duration}))
       })
     })
