@@ -139,7 +139,7 @@ const getInfo = (url, jsonObj) => {
       if (info.thumbnail && info.thumbnail.match(/^https?:\/\//i)) jsonObj.thumbnail = info.thumbnail.replace(/^http:\/\//i, 'https://')
       if (!info._duration_raw) return getVideoDurationInSeconds(video).then(duration => {
         resolve(Object.assign(jsonObj, {duration}))
-      })
+      }).catch(reject)
       jsonObj.duration = info._duration_raw
       resolve(jsonObj)
     })
