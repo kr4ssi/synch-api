@@ -4,12 +4,11 @@
   "main": "index.js",
   "dependencies": {
     "@microlink/youtube-dl": "git+https://github.com/kr4ssi/node-youtube-dl.git",
-    "express": "latest",
-    "forwarded": "latest",
-    "get-video-duration": "latest",
-    "instagram-nodejs-without-api": "latest",
-    "mime-types": "2.1.22",
-    "phantomjs": "latest",
-    "valid-url": "latest"
+    "express": "^4.16.4",
+    "forwarded": "0.1.2",
+    "get-video-duration": "^1.0.3",
+    "instagram-nodejs-without-api": "^1.2.0",
+    "phantomjs": "2.1.7",
+    "valid-url": "1.0.9"
   }
 }
