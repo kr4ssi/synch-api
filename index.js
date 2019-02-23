@@ -108,7 +108,9 @@ const getDuration = jsonObj => {
 }
 const getInfo = (url, jsonObj) => {
   return new Promise((resolve, reject) => {
-    const video = youtubedl(url, ['--verbose', '-U'], err => reject(err))
+    const video = youtubedl(url, ['--verbose', '-U'], err => {
+      if (err) reject(err)
+    })
     video.on('info', info => {
       if (!jsonObj) {
         const out = {}
