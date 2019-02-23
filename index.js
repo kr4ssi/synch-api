@@ -108,11 +108,7 @@ const getDuration = jsonObj => {
 }
 const getInfo = (url, jsonObj) => {
   return new Promise((resolve, reject) => {
-    const video = youtubedl(url, ['--verbose', '-U'])
-    video.on('error', err => {
-      if (err) reject(err)
-    })
-    video.on('info', info => {
+    const video = youtubedl(url, ['-U']).on('error', reject).on('info', info => {
       if (!jsonObj) {
         const out = {}
         Object.keys(info).sort((a, b) => a.localeCompare(b, undefined, {sensitivity: 'base'}))
@@ -141,10 +137,11 @@ const getInfo = (url, jsonObj) => {
       }
       if (allowedQuality.includes(info.width)) jsonObj.sources[0].quality = info.width;
       if (info.thumbnail && info.thumbnail.match(/^https?:\/\//i)) jsonObj.thumbnail = info.thumbnail.replace(/^http:\/\//i, 'https://')
-      if (info._duration_raw) resolve(Object.assign(jsonObj, {duration: info._duration_raw}))
-      else getVideoDurationInSeconds(video).then(duration => {
+      if (!info._duration_raw) return getVideoDurationInSeconds(video).then(duration => {
         resolve(Object.assign(jsonObj, {duration}))
       })
+      jsonObj.duration = info._duration_raw
+      resolve(jsonObj)
     })
   })
 }
