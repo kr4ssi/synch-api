@@ -1,11 +1,12 @@
 const express = require('express')
 const request = require('request')
-const youtubedl = require('youtube-dl')
+const youtubedl = require('@microlink/youtube-dl')
 const { getVideoDurationInSeconds } = require('get-video-duration')
 const Instagram = require('instagram-nodejs-without-api')
 const Insta = new Instagram()
 const URL = require('url')
 const PATH = require('path')
+var mime = require('mime-types')
 const crypto = require('crypto')
 const forwarded = require('forwarded')
 const validUrl = require('valid-url')
@@ -44,10 +45,10 @@ express().get('/redir', (req, res) => {
     newjsonObj.sources[0].url = 'https://' + req.get('host') + '/redir?url=' + url
     res.send(newjsonObj)
   }
-  if (typeof STATICS[url] != 'undefined' && STATICS[url].timestamp > hourago) return sendJson(STATICS[url].jsonObj, true)
-  const getDurationAndSend = () => getDuration(jsonObj).then(sendJson).catch(err => res.send({title: 'can\'t get duration'}))
+  if (STATICS[url] && STATICS[url].timestamp > hourago) return sendJson(STATICS[url].jsonObj, true)
+  const getDurationAndSend = jsonObj => getDuration(jsonObj).then(sendJson).catch(err => res.send({title: 'can\'t get duration'}))
   const jsonObj = {
-    title: decodeURIComponent(req.query.title),
+    title: req.query.title && decodeURIComponent(req.query.title),
     live: req.query.live == "true",
     duration: Number(req.query.duration) || 0,
     sources: [
@@ -59,7 +60,7 @@ express().get('/redir', (req, res) => {
     ]
   }
   if (jsonObj.sources[0].url.match(/.*\.m3u8/)) {
-    getDurationAndSend()
+    getDurationAndSend(jsonObj)
   }
   else if (jsonObj.sources[0].url.match(/https?:\/\/(www\.)?nxload\.com\/(embed-)?\w+\.html/i)) {
     request(jsonObj.sources[0].url.replace(/embed-/i, ''), (err, res, body) => {
@@ -69,14 +70,12 @@ express().get('/redir', (req, res) => {
         if (regMatch) {
           jsonObj.sources[0].url = regMatch[1].replace(/^http:\/\//i, 'https://')
           jsonObj.title = body.match(/<title>Watch ([^<]+)/i)[1],
-          getDurationAndSend()
+          getDurationAndSend(jsonObj)
         }
       }
     })
   }
-  else getInfo(jsonObj).then(jsonObj => {
-    getDurationAndSend()
-  }).catch(err => {
+  else getInfo(url, req.query.info ? '' : jsonObj).then(req.query.info ? info => res.send(info) : getDurationAndSend).catch(err => {
     console.error(err)
     res.send({title: 'can\'t get info'})
   })
@@ -98,49 +97,65 @@ const getDuration = jsonObj => {
   return new Promise((resolve, reject) => {
     if (jsonObj.live || jsonObj.duration) return resolve(jsonObj)
     let tries = 0
-    const tryToGetDuration = () => {
+    const tryToGetDuration = err => {
+      if (err) console.error(err)
+      if (tries > 3) return reject(tries)
       tries++
       getVideoDurationInSeconds(jsonObj.sources[0].url).then(duration => {
         jsonObj.duration = duration
         resolve(jsonObj)
-      }).catch(err => {
-        console.error(err)
-        if (tries > 2) return reject(tries)
-        tryToGetDuration()
-      })
+      }).catch(tryToGetDuration)
     }
     tryToGetDuration()
   })
 }
-const getInfo = (jsonObj) => {
-  return new Promise((resolve, reject) => youtubedl.getInfo(jsonObj.sources[0].url, ['-U'], {
-    maxBuffer: Infinity
-  }, (err, info) => {
-    if (err) return reject(err)
-    if (!info.title) info = info[0];
-    const contentType = ext => {
-      const contentType = [
-        {type: 'video/mp4', ext: ['.mp4']},
-        {type: 'video/webm', ext: ['.webm']},
-        {type: 'application/x-mpegURL', ext: ['.m3u8']},
-        {type: 'video/ogg', ext: ['.ogv']},
-        {type: 'application/dash+xml', ext: ['.mpd']},
-        {type: 'rtmp/flv', ext: ['.flv']},
-        {type: 'audio/aac', ext: ['.aac']},
-        {type: 'audio/ogg', ext: ['.ogg']},
-        {type: 'audio/mpeg', ext: ['.mp3', '.m4a']}
-      ].find(contentType => contentType.ext.includes(ext))
-      if (typeof contentType != 'undefined') return contentType.type
+const proxy = express().get('*', (req, res) => res.send(console.log(req.rawHeaders))).listen(5002)
+const getInfo = (url, jsonObj) => {
+  return new Promise((resolve, reject) => {
+    if (!jsonObj) {
+      youtubedl.getInfo(url, ['--verbose', '--no-colors'], {}, (err, info) => console.log(err, info))
+      const out = {}
+      Object.keys(info).sort((a, b) => a.localeCompare(b, undefined, {sensitivity: 'base'}))
+      .forEach(key => out[key] = info[key])
+      return resolve(out)
     }
-    jsonObj.title = !info.title.toLowerCase().startsWith(info.extractor_key.toLowerCase()) ? info.extractor_key + ' - ' + info.title : info.title
-    if (info.manifest_url) jsonObj.sources[0].url = info.manifest_url.replace(/^http:\/\//i, 'https://')
-    else {
-      jsonObj.sources[0].url = info.url.replace(/^http:\/\//i, 'https://')
-      jsonObj.sources[0].contentType = contentType(PATH.extname(URL.parse(jsonObj.sources[0].url).pathname)) || 'video/mp4'
-    }
-    if (allowedQuality.includes(info.width)) jsonObj.sources[0].quality = info.width;
-    if (info.thumbnail && info.thumbnail.match(/^https?:\/\//i)) jsonObj.thumbnail = info.thumbnail.replace(/^http:\/\//i, 'https://')
-    if (info._duration_raw) jsonObj.duration = info._duration_raw
-    resolve(jsonObj)
-  }))
+    const video = youtubedl(url, ['--verbose', '-U'], {
+      maxBuffer: 1024 * 1024 * 10
+    })
+    video.on('info', info => {
+      if (!jsonObj) {
+        const out = {}
+        Object.keys(info).sort((a, b) => a.localeCompare(b, undefined, {sensitivity: 'base'}))
+        .forEach(key => out[key] = info[key])
+        return resolve(out)
+      }
+      if (!info.title) info = info[0]
+      const contentType = ext => {
+        const contentType = [
+          {type: 'video/mp4', ext: ['.mp4']},
+          {type: 'video/webm', ext: ['.webm']},
+          {type: 'application/x-mpegURL', ext: ['.m3u8']},
+          {type: 'video/ogg', ext: ['.ogv']},
+          {type: 'application/dash+xml', ext: ['.mpd']},
+          {type: 'audio/aac', ext: ['.aac']},
+          {type: 'audio/ogg', ext: ['.ogg']},
+          {type: 'audio/mpeg', ext: ['.mp3', '.m4a']}
+        ].find(contentType => contentType.ext.includes(ext))
+        if (typeof contentType != 'undefined') return contentType.type
+      }
+      jsonObj.title = info.extractor_key + ' - ' + info.title.replace(new RegExp('^' + info.extractor_key, 'i'))
+      if (info.manifest_url) jsonObj.sources[0].url = info.manifest_url.replace(/^http:\/\//i, 'https://')
+      else {
+        jsonObj.sources[0].url = info.url.replace(/^http:\/\//i, 'https://')
+        jsonObj.sources[0].contentType = contentType(PATH.extname(URL.parse(jsonObj.sources[0].url).pathname)) || 'video/mp4'
+      }
+      if (allowedQuality.includes(info.width)) jsonObj.sources[0].quality = info.width;
+      if (info.thumbnail && info.thumbnail.match(/^https?:\/\//i)) jsonObj.thumbnail = info.thumbnail.replace(/^http:\/\//i, 'https://')
+      if (info._duration_raw) resolve(Object.assign(jsonObj, {duration: info._duration_raw}))
+      else getVideoDurationInSeconds(video).then(duration => {
+        console.log('got duration')
+        resolve(Object.assign(jsonObj, {duration}))
+      })
+    })
+  })
 }
