@@ -111,7 +111,7 @@ const getInfo = (url, jsonObj) => {
     const video = youtubedl(url, ['--verbose', '-U'])
     video.on('error', err => {
       if (err) reject(err)
-    }
+    })
     video.on('info', info => {
       if (!jsonObj) {
         const out = {}
