@@ -23,7 +23,7 @@ const fixurl = url => {
 express().get('/redir', (req, res) => {
   const url = fixurl(req.query.url)
   if (url && STATICS[url] && STATICS[url].user && STATICS[url].user[md5ip(req)]) res.redirect(STATICS[url].user[md5ip(req)])
-  else res.redirect('https://ia600700.us.archive.org/26/items/youtube-Hazd5tl37iM/ZDF_Testbild_1988-Hazd5tl37iM.mp4')
+  else res.redirect('https://ia801501.us.archive.org/0/items/youtube-yUUjeindT5U/VHS_simple_static_noise_-_Motion_background_loop_1-yUUjeindT5U.mp4')
 }).get('/add.json', (req, res) => {
   const url = fixurl(req.query.url)
   if (!url) return res.send({title: 'invalid url'})
