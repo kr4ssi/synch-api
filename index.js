@@ -39,9 +39,9 @@ express().get('/redir', (req, res) => {
       STATICS[url].user[md5ip(req)] = req.query.userlink
       console.log(STATICS[url])
     }
-    if (!req.query.redir) return res.send(jsonObj)
     const newjsonObj = JSON.parse(JSON.stringify(jsonObj))
-    newjsonObj.sources[0].url = 'https://' + req.get('host') + '/redir?url=' + url
+    if (req.query.redir) newjsonObj.sources[0].url = 'https://' + req.get('host') + '/redir?url=' + url
+    if (req.query.title) newjsonObj.title = decodeURIComponent(req.query.title)
     res.send(newjsonObj)
   }
   if (STATICS[url] && STATICS[url].timestamp > hourago) return sendJson(STATICS[url].jsonObj, true)
