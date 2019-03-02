@@ -10,7 +10,8 @@
 const timer = setInterval(() => {
   let link = `${window.location.protocol}//${window.location.hostname}`
   if (window.location.href.match(/https?:\/\/(openload.co|oload\.[a-z0-9-]{2,})\/(f|embed)\/[^/?#&]+/)) {
-    let e = document.querySelector("[id^=streamur]")
+    let e = document.querySelector("[id^=lqEH1]")
+    if (!e) e = document.querySelector("[id^=streamur]")
     if (!e) e = document.querySelector("#mediaspace_wrapper > div:last-child > p:last-child")
     if (!e) e = document.querySelector("#main p:last-child")
     if (!e) return
