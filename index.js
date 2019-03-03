@@ -108,7 +108,7 @@ const getDuration = jsonObj => {
 }
 const getInfo = (url, jsonObj) => {
   return new Promise((resolve, reject) => {
-    const video = youtubedl(url, ['-U']).on('error', reject).on('info', info => {
+    const video = youtubedl(url, ['-U', '--restrict-filenames']).on('error', reject).on('info', info => {
       if (!jsonObj) {
         const out = {}
         Object.keys(info).sort((a, b) => a.localeCompare(b, undefined, {sensitivity: 'base'}))
