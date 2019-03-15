@@ -90,7 +90,7 @@ express().get('/redir', (req, res) => {
   //res.send(provideUserLink(req.query.url, req.body.url, md5ip(req)))
 }).listen(PORT, () => console.log(`Listening on ${ PORT }`))
 const allowedQuality = [240, 360, 480, 540, 720, 1080, 1440]
-const getDuration = jsonObj => {
+const getDuration = (jsonObj, video) => {
   return new Promise((resolve, reject) => {
     if (jsonObj.live || jsonObj.duration) return resolve(jsonObj)
     let tries = 0
@@ -98,8 +98,8 @@ const getDuration = jsonObj => {
       if (err) console.error(err)
       if (tries > 3) return reject(tries)
       tries++
-      getVideoDurationInSeconds(jsonObj.sources[0].url).then(duration => {
-        jsonObj.duration = duration
+      getVideoDurationInSeconds(video || jsonObj.sources[0].url).then(duration => {
+        Object.assign(jsonObj, {duration})
         resolve(jsonObj)
       }).catch(tryToGetDuration)
     }
@@ -137,9 +137,7 @@ const getInfo = (url, jsonObj) => {
       }
       if (allowedQuality.includes(info.width)) jsonObj.sources[0].quality = info.width;
       if (info.thumbnail && info.thumbnail.match(/^https?:\/\//i)) jsonObj.thumbnail = info.thumbnail.replace(/^http:\/\//i, 'https://')
-      if (!info._duration_raw) return getVideoDurationInSeconds(video).then(duration => {
-        resolve(Object.assign(jsonObj, {duration}))
-      }).catch(reject)
+      if (!info._duration_raw) return getDuration(jsonObj, video).then(resolve).catch(reject)
       jsonObj.duration = info._duration_raw
       resolve(jsonObj)
     })
