@@ -101,6 +101,8 @@ const getDuration = (jsonObj, video) => {
       getVideoDurationInSeconds(video || jsonObj.sources[0].url).then(duration => {
         Object.assign(jsonObj, {duration})
         resolve(jsonObj)
+        video.destroy()
+        console.log('got duration: ' + duration)
       }).catch(tryToGetDuration)
     }
     tryToGetDuration()
@@ -140,6 +142,7 @@ const getInfo = (url, jsonObj) => {
       if (!info._duration_raw) return getDuration(jsonObj, video).then(resolve).catch(reject)
       jsonObj.duration = info._duration_raw
       resolve(jsonObj)
+      video.destroy()
     })
   })
 }
