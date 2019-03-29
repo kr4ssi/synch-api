@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        openload fürn KS
 // @namespace   https://github.com/kr4ssi/synch-api/
-// @version     1.0.2
+// @version     1.0.3
 // @author      kr4ssi
 // @include     /https?:\/\/(openload.co|oload\.[a-z0-9-]{2,})\/(f|embed)\/[^/?#&]+/
 // @include     /https?:\/\/(streamango\.com|fruithosts\.net)\/(f|embed)\/[^/?#&]+/
@@ -23,6 +23,6 @@ const timer = setInterval(() => {
     if (!e) return
     link = e.src
   }
-  if (confirm(`Link "${link}" gefunden. An die Api schicken?`)) window.location.replace(`https://synchapi.herokuapp.com/add.json?url=${window.location.href}&userlink=${link}`)
+  if (confirm(`Userlink:\n"${link}"\n\nfür Addierungslink:\n${window.location.href}\ngefunden. An die Api schicken?`)) window.location.replace(`https://synchapi.herokuapp.com/add.json?url=${window.location.href}&userlink=${link}`)
   clearInterval(timer)
 }, 1000)
