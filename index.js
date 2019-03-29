@@ -74,7 +74,7 @@ express().get('/redir', (req, res) => {
   }
   else getInfo(url, req.query.info ? '' : jsonObj).then(req.query.info ? info => res.send(info) : getDurationAndSend).catch(err => {
     console.error(err)
-    res.send({title: 'can\'t get info'})
+    res.send({title: err.message.split('\n').filter(line => /^ERROR: /.test(line)).join('\n')})
   })
 }).get('/', (req, res) => {
   res.end()
