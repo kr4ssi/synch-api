@@ -74,7 +74,7 @@ express().get('/redir', (req, res) => {
   }
   else getInfo(url, req.query.info ? '' : jsonObj).then(req.query.info ? info => res.send(info) : getDurationAndSend).catch(err => {
     console.error(err)
-    res.send({title: err.message.split('\n').filter(line => /^ERROR: /.test(line)).join('\n')})
+    res.send({title: err.message ? err.message.split('\n').filter(line => /^ERROR: /.test(line)).join('\n') : 'can\'t get duration'})
   })
 }).get('/', (req, res) => {
   res.end()
@@ -96,7 +96,7 @@ const getDuration = (jsonObj, video) => {
     let tries = 0
     const tryToGetDuration = err => {
       if (err) console.error(err)
-      if (tries > 3) return reject(tries)
+      if (tries > 1) return reject(tries)
       tries++
       getVideoDurationInSeconds(video || jsonObj.sources[0].url).then(duration => {
         Object.assign(jsonObj, {duration})
